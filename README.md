@@ -1,5 +1,18 @@
 # IADE Project Template
 
+> **This repo is being used to build a Planning Poker web app** — see [specs/planning-poker/](specs/planning-poker/) for the SDD docs (spec, plan, tasks) and [docs/adr/](docs/adr/) for architectural decisions.
+>
+> **Quick start (this app):**
+>
+> ```bash
+> npm install
+> npm run dev          # http://localhost:3000
+> npm run typecheck    # tsc --noEmit
+> npm run build
+> ```
+
+---
+
 A pre-configured **Integrated Agentive Development Environment (IADE)** for disciplined vibe coding with AI assistants (Claude Code, Cursor, Windsurf, Codex, etc.).
 
 Use this as the base for any new project where you want AI-assisted development with proper guardrails: spec-first, test-first, human-in-command.
