@@ -1,0 +1,11 @@
+node_modules/
+.next/
+coverage/
+package-lock.json
+*.tsbuildinfo
+
+# Markdown docs com formatação intencional (tabelas, blocos, listas hand-tuned).
+# Esses arquivos seguem o estilo do template SDD, não o do Prettier.
+specs/
+docs/
+.claude/

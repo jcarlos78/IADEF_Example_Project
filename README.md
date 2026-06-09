@@ -93,7 +93,7 @@ Vibe coding works best with guardrails. This template enforces a few non-negotia
 1. **Spec before code** — describe observable behavior before generating implementation
 2. **Tests track behavior** — every behavioral change needs tests
 3. **Human approval before commit** — Human-In-Command (HIC) mode by default
-4. **Comments explain *why*, not *what*** — naming documents the what
+4. **Comments explain _why_, not _what_** — naming documents the what
 5. **Architectural decisions become ADRs** — immutable, traceable
 6. **Secrets never enter the repo** — even in example files
 7. **Atomic changes** — one concern per commit/PR

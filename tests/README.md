@@ -18,7 +18,7 @@ tests/
 
 ## Principle
 
-Tests reflect the acceptance criteria of the corresponding spec. See constitution, Principle 2 — *Tests track behavior*.
+Tests reflect the acceptance criteria of the corresponding spec. See constitution, Principle 2 — _Tests track behavior_.
 
 ## How to generate
 
