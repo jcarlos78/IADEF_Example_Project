@@ -1,0 +1,41 @@
+{
+  "$schema": "https://modelcontextprotocol.io/schema/mcp.json",
+  "_comment": "Example MCP configuration for the IADE template. Uncomment and customize the servers your team actually uses. Remove the ones that don't apply.",
+  "mcpServers": {
+    "filesystem": {
+      "_doc": "Controlled access to local directories. Useful for projects with external assets or monorepos.",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/allowed/path/1",
+        "/allowed/path/2"
+      ]
+    },
+    "_postgres-readonly": {
+      "_doc": "Database in read-only mode. Enable by removing the leading underscore from the name.",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-postgres"],
+      "env": {
+        "POSTGRES_URL": "postgresql://readonly_user:password@host:5432/db"
+      }
+    },
+    "_github": {
+      "_doc": "GitHub repository and issue operations. Enable and provide a token with minimum required scope.",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
+      }
+    },
+    "_internal-api": {
+      "_doc": "Connector for an internal organization API. Adapt to your project's conventions.",
+      "command": "node",
+      "args": ["./mcp-servers/internal-api/index.js"],
+      "env": {
+        "API_BASE_URL": "${INTERNAL_API_URL}",
+        "API_TOKEN": "${INTERNAL_API_TOKEN}"
+      }
+    }
+  }
+}

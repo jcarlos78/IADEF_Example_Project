@@ -1,0 +1,45 @@
+# macOS
+.DS_Store
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Local Claude Code overrides (project-level settings stays in git; user overrides do not)
+.claude/settings.local.json
+.claude/.credentials.json
+
+# Environment / secrets
+.env
+.env.local
+.env.*.local
+
+# Dependencies (pick what applies to your stack)
+node_modules/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+
+# Build / dist
+dist/
+build/
+*.egg-info/
+.next/
+.nuxt/
+.cache/
+
+# Logs / runtime
+*.log
+*.pid
+*.seed
+*.tgz
+
+# Test / coverage
+coverage/
+.coverage
+.pytest_cache/
+.tox/
+htmlcov/
