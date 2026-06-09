@@ -5,6 +5,9 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["src/**/*.test.ts", "src/**/*.test.tsx", "tests/unit/**/*.test.ts"],
+    env: {
+      LOG_LEVEL: "silent",
+    },
   },
   resolve: {
     alias: {
