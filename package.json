@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "NODE_ENV=development tsx watch src/server/index.ts",
     "build": "next build",
-    "start": "next start",
+    "start": "NODE_ENV=production tsx src/server/index.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "format": "prettier --write .",
@@ -30,6 +30,7 @@
     "pino-pretty": "^11.0.0",
     "prettier": "^3.0.0",
     "socket.io-client": "^4.7.0",
+    "tsx": "^4.0.0",
     "typescript": "^5.6.0",
     "vitest": "^2.0.0"
   }
