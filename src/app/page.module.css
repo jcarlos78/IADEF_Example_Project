@@ -1,0 +1,9 @@
+.main {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: var(--space-9) var(--space-4);
+  background:
+    radial-gradient(circle at 15% 0%, rgba(79, 70, 229, 0.07), transparent 45%),
+    radial-gradient(circle at 85% 100%, rgba(99, 102, 241, 0.05), transparent 45%);
+}

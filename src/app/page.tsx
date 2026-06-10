@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { CreateRoomForm } from "@/components/CreateRoomForm";
 import type { ScaleId } from "@/lib/scales";
+import styles from "./page.module.css";
 
 export default function HomePage() {
   const router = useRouter();
@@ -42,7 +43,7 @@ export default function HomePage() {
   }
 
   return (
-    <main>
+    <main className={styles.main}>
       <CreateRoomForm onSubmit={handle} isSubmitting={isSubmitting} errorMessage={errorMessage} />
     </main>
   );
