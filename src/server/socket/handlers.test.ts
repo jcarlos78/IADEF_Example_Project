@@ -96,11 +96,11 @@ function expectOk<T>(r: Result<T>): asserts r is { ok: true; data: T } {
 }
 
 describe("room:create / room:join — AC1, AC2, AC8, AC11", () => {
-  it("AC1: cria sala e devolve roomId + hostSessionId + estado", async () => {
+  it("AC1: creates a room and returns roomId + hostSessionId + state", async () => {
     const host = await connect();
     const ack = await emit(host, "room:create", {
       scaleId: "fibonacci",
-      hostNickname: "Anfitriã",
+      hostNickname: "Host",
     });
     expectOk(ack);
     expect(ack.data.roomId).toBe("room-1");
@@ -109,7 +109,7 @@ describe("room:create / room:join — AC1, AC2, AC8, AC11", () => {
     expect(ack.data.state.participants[0].isHost).toBe(true);
   });
 
-  it("AC8: room:create rejeita apelido vazio", async () => {
+  it("AC8: room:create rejects an empty nickname", async () => {
     const host = await connect();
     const ack = await emit(host, "room:create", {
       scaleId: "fibonacci",
@@ -119,7 +119,7 @@ describe("room:create / room:join — AC1, AC2, AC8, AC11", () => {
     if (!ack.ok) expect(ack.error.code).toBe("nickname-empty");
   });
 
-  it("room:create rejeita escala inválida", async () => {
+  it("room:create rejects an invalid scale", async () => {
     const host = await connect();
     const ack = await emit(host, "room:create", {
       scaleId: "bogus" as never,
@@ -129,7 +129,7 @@ describe("room:create / room:join — AC1, AC2, AC8, AC11", () => {
     if (!ack.ok) expect(ack.error.code).toBe("scale-invalid");
   });
 
-  it("AC11: room:join em sala inexistente retorna room-not-found", async () => {
+  it("AC11: room:join on a missing room returns room-not-found", async () => {
     const c = await connect();
     const ack = await emit(c, "room:join", {
       roomId: "ghost",
@@ -140,28 +140,28 @@ describe("room:create / room:join — AC1, AC2, AC8, AC11", () => {
     if (!ack.ok) expect(ack.error.code).toBe("room-not-found");
   });
 
-  it("AC8: room:join rejeita apelido duplicado", async () => {
+  it("AC8: room:join rejects a duplicate nickname", async () => {
     const host = await connect();
     const created = await emit(host, "room:create", {
       scaleId: "fibonacci",
-      hostNickname: "Anfitriã",
+      hostNickname: "Host",
     });
     expectOk(created);
     const other = await connect();
     const ack = await emit(other, "room:join", {
       roomId: created.data.roomId,
       sessionId: "s-other",
-      nickname: "Anfitriã",
+      nickname: "Host",
     });
     expect(ack.ok).toBe(false);
     if (!ack.ok) expect(ack.error.code).toBe("nickname-duplicate");
   });
 
-  it("AC2 + AC12: novo participante entra e demais recebem room:state", async () => {
+  it("AC2 + AC12: a new participant joins and others receive room:state", async () => {
     const host = await connect();
     const created = await emit(host, "room:create", {
       scaleId: "fibonacci",
-      hostNickname: "Anfitriã",
+      hostNickname: "Host",
     });
     expectOk(created);
 
@@ -182,11 +182,11 @@ describe("room:create / room:join — AC1, AC2, AC8, AC11", () => {
 });
 
 describe("round flow — AC3, AC4, AC5, AC6", () => {
-  it("AC3: voto não vaza no broadcast antes de reveal; AC4: reveal entrega a todos", async () => {
+  it("AC3: vote does not leak in the broadcast before reveal; AC4: reveal reaches every client", async () => {
     const host = await connect();
     const created = await emit(host, "room:create", {
       scaleId: "fibonacci",
-      hostNickname: "Anfitriã",
+      hostNickname: "Host",
     });
     expectOk(created);
     const roomId = created.data.roomId;
@@ -239,7 +239,7 @@ describe("round flow — AC3, AC4, AC5, AC6", () => {
     expect(aliceAfter.round?.result?.votesBySession["s-alice"]).toBe("13");
   });
 
-  it("AC6: round:reset descarta rodada e broadcast reflete", async () => {
+  it("AC6: round:reset drops the round and the broadcast reflects it", async () => {
     const host = await connect();
     const created = await emit(host, "room:create", {
       scaleId: "fibonacci",
@@ -263,7 +263,7 @@ describe("round flow — AC3, AC4, AC5, AC6", () => {
     expect(state.round).toBeNull();
   });
 
-  it("não-host não consegue revelar (not-host)", async () => {
+  it("non-host cannot reveal (not-host)", async () => {
     const host = await connect();
     const created = await emit(host, "room:create", {
       scaleId: "fibonacci",
@@ -289,7 +289,7 @@ describe("round flow — AC3, AC4, AC5, AC6", () => {
 });
 
 describe("AC10 — host handoff via tick()", () => {
-  it("desconexão do host > grace period promove mais antigo conectado", async () => {
+  it("host disconnect > grace period promotes the oldest connected", async () => {
     const host = await connect();
     const created = await emit(host, "room:create", {
       scaleId: "fibonacci",
@@ -329,8 +329,8 @@ describe("AC10 — host handoff via tick()", () => {
   });
 });
 
-describe("AC9 — tick() expira salas inativas e emite room:closed", () => {
-  it("sala sem atividade por mais de TTL é fechada", async () => {
+describe("AC9 — tick() expires inactive rooms and emits room:closed", () => {
+  it("a room with no activity beyond TTL is closed", async () => {
     const host = await connect();
     const created = await emit(host, "room:create", {
       scaleId: "fibonacci",
@@ -357,8 +357,8 @@ describe("AC9 — tick() expira salas inativas e emite room:closed", () => {
   });
 });
 
-describe("AC12 — participantes saem e lista atualiza", () => {
-  it("room:leave propaga novo estado para os demais", async () => {
+describe("AC12 — participants leave and the list updates", () => {
+  it("room:leave propagates the new state to the others", async () => {
     const host = await connect();
     const created = await emit(host, "room:create", {
       scaleId: "fibonacci",
@@ -378,8 +378,8 @@ describe("AC12 — participantes saem e lista atualiza", () => {
   });
 });
 
-describe("Princípio 8 — formato dos erros", () => {
-  it("toda resposta de erro tem shape { ok:false, error:{code,message} }", async () => {
+describe("Principle 8 — error shape", () => {
+  it("every error response has shape { ok:false, error:{code,message} }", async () => {
     const c = await connect();
     const ack = await emit(c, "room:join", {
       roomId: "missing",

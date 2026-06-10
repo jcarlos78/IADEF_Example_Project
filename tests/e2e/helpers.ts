@@ -15,11 +15,11 @@ export async function createRoomAsHost(
   const ctx = await browser.newContext();
   const page = await ctx.newPage();
   await page.goto("/");
-  await page.getByLabel(/apelido/i).fill(opts.nickname ?? "Host");
+  await page.getByLabel(/nickname/i).fill(opts.nickname ?? "Host");
   if (opts.scaleLabel) {
     await page.getByLabel(new RegExp(opts.scaleLabel, "i")).check();
   }
-  await page.getByRole("button", { name: /criar sala/i }).click();
+  await page.getByRole("button", { name: /create room/i }).click();
   await page.waitForURL(/\/room\/[a-z0-9]+/);
   return { ctx, page, url: page.url() };
 }
@@ -32,9 +32,9 @@ export async function joinAsGuest(
   const ctx = await browser.newContext();
   const page = await ctx.newPage();
   await page.goto(url);
-  await page.getByRole("textbox", { name: /apelido/i }).fill(nickname);
-  await page.getByRole("button", { name: /entrar/i }).click();
-  await expect(page.getByRole("heading", { name: /sala /i })).toBeVisible();
+  await page.getByRole("textbox", { name: /nickname/i }).fill(nickname);
+  await page.getByRole("button", { name: /^join$/i }).click();
+  await expect(page.getByRole("heading", { name: /room /i })).toBeVisible();
   return { ctx, page };
 }
 
@@ -47,11 +47,11 @@ export async function setupRoomWithTwoUsers(
     page: host,
     url,
   } = await createRoomAsHost(browser, {
-    nickname: opts.hostName ?? "Anfitria",
+    nickname: opts.hostName ?? "Host",
     scaleLabel: opts.scaleLabel,
   });
   const { ctx: guestCtx, page: guest } = await joinAsGuest(browser, url, opts.guestName ?? "Alice");
-  // host vê o guest entrando
+  // host sees the guest joining
   await expect(host.getByText(opts.guestName ?? "Alice")).toBeVisible();
   return { hostCtx, host, guestCtx, guest, roomUrl: url };
 }

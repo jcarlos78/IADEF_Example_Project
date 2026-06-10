@@ -38,12 +38,12 @@ export function RoundControls({
   return (
     <section aria-labelledby="round-controls-heading" className={styles.panel}>
       <h2 id="round-controls-heading" className={styles.heading}>
-        Controles do facilitador
+        Facilitator controls
       </h2>
 
       <div className={styles.field}>
         <label htmlFor="scale-select" className={styles.label}>
-          Escala
+          Scale
         </label>
         <select
           id="scale-select"
@@ -61,42 +61,42 @@ export function RoundControls({
       </div>
 
       {round === null ? (
-        <form onSubmit={handleStart} aria-label="Iniciar rodada" className={styles.startForm}>
+        <form onSubmit={handleStart} aria-label="Start round" className={styles.startForm}>
           <div className={styles.field}>
             <label htmlFor="round-title" className={styles.label}>
-              Título da rodada (opcional)
+              Round title (optional)
             </label>
             <input
               id="round-title"
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Ex.: US-42"
+              placeholder="e.g. US-42"
               maxLength={80}
               disabled={isSubmitting}
               className={styles.input}
             />
           </div>
           <button type="submit" disabled={isSubmitting} className={styles.btnPrimary}>
-            Iniciar rodada
+            Start round
           </button>
         </form>
       ) : round.revealed ? (
         <div className={styles.status}>
-          <p className={styles.statusText}>Rodada revelada.</p>
+          <p className={styles.statusText}>Round revealed.</p>
           <button
             type="button"
             onClick={onResetRound}
             disabled={isSubmitting}
             className={styles.btnGhost}
           >
-            Nova rodada
+            New round
           </button>
         </div>
       ) : (
         <div className={styles.status}>
           <p className={styles.statusText}>
-            Rodada em andamento{round.title ? `: ${round.title}` : ""}.
+            Round in progress{round.title ? `: ${round.title}` : ""}.
           </p>
           <button
             type="button"
@@ -104,7 +104,7 @@ export function RoundControls({
             disabled={isSubmitting}
             className={styles.btnSuccess}
           >
-            Revelar
+            Reveal
           </button>
         </div>
       )}

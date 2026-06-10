@@ -1,4 +1,4 @@
-# ADR 0003 — Estratégia de CSS: CSS Modules + custom properties, sem dependências runtime
+# ADR 0003 — CSS strategy: CSS Modules + custom properties, no runtime dependencies
 
 - **Status:** accepted
 - **Date:** 2026-06-10
@@ -6,80 +6,80 @@
 
 ## Context
 
-Até este momento o projeto Planning Poker tem **zero infraestrutura de CSS**: nenhum `globals.css`, nenhum CSS Module, nenhum framework (Tailwind, styled-components, Emotion). Os 7 componentes e as 2 páginas usam markup semântico puro, sem qualquer styling.
+Until this point the Planning Poker project had **zero CSS infrastructure**: no `globals.css`, no CSS Modules, no framework (Tailwind, styled-components, Emotion). All 7 components and the 2 pages used pure semantic markup with no styling.
 
-Vamos aplicar um redesign visual completo inspirado no design system Coolmath Games (Kiara Hardesty) — tom "cheio", cores vivas, cartas chunky, seafoam+orange como cores de estado, tipografia bold. O scope inclui todas as superfícies (Home + Room + componentes).
+We are now applying a complete visual redesign inspired by the Coolmath Games design system (Kiara Hardesty) — "full" tone, vivid colors, chunky cards, seafoam+orange as state colors, bold typography. The scope covers every surface (Home + Room + components).
 
-Como partimos do zero, precisamos escolher a estratégia de CSS para o projeto. A constituição (Princípio 5) exige um ADR para decisões arquiteturais que afetam todo o codebase.
+Because we are starting from scratch, we need to choose the CSS strategy for the project. The constitution (Principle 5) requires an ADR for architectural decisions that touch the whole codebase.
 
-Constraints relevantes:
+Relevant constraints:
 
-- Stack atual: Next.js 15 App Router + React 19 + TypeScript estrito. RSC por defeito.
-- Constituição: "menos é mais" — preferir simplicidade, evitar dependências desnecessárias.
-- Tamanho do projeto: pequeno (7 componentes, 2 páginas). Não há demanda atual por theming multi-tenant, design tokens partilhados entre projetos, ou dark mode (este último foi adiado explicitamente).
-- Convenções já estabelecidas: ESLint flat config com `no-console: error`, Prettier, Vitest + Playwright.
+- Current stack: Next.js 15 App Router + React 19 + strict TypeScript. RSC by default.
+- Constitution: "less is more" — prefer simplicity, avoid unnecessary dependencies.
+- Project size: small (7 components, 2 pages). No current demand for multi-tenant theming, shared design tokens across projects, or dark mode (the last one was explicitly deferred).
+- Conventions already in place: ESLint flat config with `no-console: error`, Prettier, Vitest + Playwright.
 
 ## Decision
 
-Adotaremos **CSS Modules + CSS custom properties (design tokens)** como estratégia única de CSS para todo o projeto:
+We will adopt **CSS Modules + CSS custom properties (design tokens)** as the single CSS strategy for the whole project:
 
-- **Design tokens** definidos em `src/app/globals.css` no `:root` (cores, spacing, radius, shadows, type scale, motion). Naming semântico (`--color-primary-500`, `--space-4`) + camada derivada (`--color-text`, `--color-card-bg`) para permitir trocas pontuais sem renomear consumidores.
-- **CSS Modules per-componente** — cada componente ganha um ficheiro `Component.module.css` irmão, importado como `import styles from "./Component.module.css"`. Scoping automático evita colisão de nomes.
-- **Tipografia via `next/font/google`** (Inter Variable, exposta como `--font-inter` e usada por `--font-sans`). Zero runtime no cliente — a fonte é self-hosted no build, sem `<link>` para Google.
-- **Reset moderno + base** no topo de `globals.css`: box-sizing universal, zero margens default em headings/p/lists, `:focus-visible` global, suporte a `prefers-reduced-motion`.
-- **Sem CSS-in-JS runtime.** Sem styled-components, sem Emotion. Mantém RSC sem fricção.
+- **Design tokens** defined in `src/app/globals.css` under `:root` (colors, spacing, radius, shadows, type scale, motion). Semantic naming (`--color-primary-500`, `--space-4`) + a derived layer (`--color-text`, `--color-card-bg`) to allow targeted swaps without renaming consumers.
+- **Per-component CSS Modules** — every component gets a sibling `Component.module.css` file, imported as `import styles from "./Component.module.css"`. Automatic scoping avoids name collisions.
+- **Typography via `next/font/google`** (Inter Variable, exposed as `--font-inter` and used by `--font-sans`). Zero client runtime — the font is self-hosted at build time, with no `<link>` to Google.
+- **Modern reset + base** at the top of `globals.css`: universal box-sizing, zero default margins on headings/p/lists, global `:focus-visible`, `prefers-reduced-motion` support.
+- **No runtime CSS-in-JS.** No styled-components, no Emotion. Keeps RSC friction-free.
 
-Convenção:
+Convention:
 
-- Nomes de classes em camelCase dentro dos módulos (`.cardPicker`, `.isSelected`).
-- Hooks de estado preferem `data-*` attributes (ex.: `[data-selected="true"]`) quando já existem no JSX — mais legível em DevTools e reutilizáveis em testes.
-- Tokens sempre via `var(--name)`. Sem hex inline em CSS de componente.
-- Dark mode: **fora de escopo** neste ADR. Quando entrar, será um overlay de tokens em `[data-theme="dark"]` ou `@media (prefers-color-scheme: dark)` — não exige migração estrutural.
+- Class names in camelCase inside modules (`.cardPicker`, `.isSelected`).
+- State hooks prefer `data-*` attributes (e.g. `[data-selected="true"]`) when already present in the JSX — more readable in DevTools and reusable in tests.
+- Tokens always via `var(--name)`. No inline hex in component CSS.
+- Dark mode: **out of scope** in this ADR. When it lands, it will be a token overlay under `[data-theme="dark"]` or `@media (prefers-color-scheme: dark)` — no structural migration required.
 
 ## Alternatives considered
 
-- **Tailwind CSS (v3 ou v4).**
-  Prós: ecossistema grande, rápido para protótipo, tokens via `theme`. Contras: dependência runtime + build extra, classes utilitárias poluem o JSX num projeto pequeno onde semântica conta, força disciplina contra escalation (`@apply`, plugins). Para 7 componentes pequenos, é peso desproporcional. **Rejeitado.**
+- **Tailwind CSS (v3 or v4).**
+  Pros: large ecosystem, fast to prototype, tokens via `theme`. Cons: runtime + extra build dependency, utility classes pollute the JSX in a small project where semantics matter, requires discipline against escalation (`@apply`, plugins). For 7 small components, disproportionate weight. **Rejected.**
 
 - **styled-components / Emotion.**
-  Prós: API ergonómica, theming fácil. Contras: runtime CSS-in-JS tem fricção declarada com React Server Components (precisa de wrappers client). Aumenta o bundle. **Rejeitado.**
+  Pros: ergonomic API, easy theming. Cons: runtime CSS-in-JS has documented friction with React Server Components (requires client wrappers). Grows the bundle. **Rejected.**
 
 - **vanilla-extract.**
-  Prós: zero-runtime, type-safe, tokens em TS. Contras: integra com Next.js mas exige plugin/build adicional. Complexidade do build acima do que este projeto justifica. **Adiado** — pode ser revisitado se o design system crescer ao ponto de tokens partilhados entre múltiplos projetos.
+  Pros: zero-runtime, type-safe, tokens in TS. Cons: integrates with Next.js but requires an additional plugin/build. Build complexity above what this project justifies. **Deferred** — can be revisited if the design system grows to the point of sharing tokens between multiple projects.
 
-- **CSS global puro (`globals.css` único, classes globais).**
-  Prós: zero scoping a aprender, um único ficheiro. Contras: colisão de nomes inevitável quando o projeto crescer; refactors de classe ficam arriscados. **Rejeitado.**
+- **Pure global CSS (a single `globals.css`, global classes).**
+  Pros: zero scoping to learn, one file. Cons: name collisions become inevitable as the project grows; class refactors get risky. **Rejected.**
 
 ## Consequences
 
 ### Positive
 
-- Zero dependências runtime novas. Bundle não cresce.
-- CSS Modules dão scoping automático e funcionam em Server e Client Components sem ajustes.
-- Design tokens em `:root` deixam o app inteiro consumir uma fonte única de verdade. Trocar `--color-primary-500` ressoa em todo o sistema.
-- `next/font/google` self-hosta as fontes no build — bom para privacidade (sem hit ao Google em runtime) e performance.
+- Zero new runtime dependencies. Bundle does not grow.
+- CSS Modules give automatic scoping and work in both Server and Client Components without adjustments.
+- Design tokens in `:root` let the whole app consume a single source of truth. Swapping `--color-primary-500` ripples through the entire system.
+- `next/font/google` self-hosts the fonts at build time — good for privacy (no runtime hit to Google) and performance.
 
 ### Negative (accepted costs)
 
-- Zero infraestrutura para purgar CSS não usado (em CSS Modules cada `.module.css` só é carregado quando o componente é, então o problema é menor — mas classes mortas dentro de um módulo não são detectadas automaticamente). Aceita-se manutenção manual no `code-reviewer`.
-- Não há type-safety nos nomes de classes (vs. vanilla-extract). Bug de nome errado vira CSS silenciosamente sem efeito. Mitigado por revisão de PR.
-- Dark mode adiado — quando vier, exige uma passada de overlay de tokens; não é trivial mas é localizado em `globals.css`.
+- No infrastructure to purge unused CSS (in CSS Modules each `.module.css` is only loaded when the component is, so the problem is smaller — but dead classes inside a module are not detected automatically). We accept manual maintenance via `code-reviewer`.
+- No type-safety on class names (vs. vanilla-extract). A misspelled name silently produces no-effect CSS. Mitigated by PR review.
+- Dark mode deferred — when it lands, it will require a token overlay pass; not trivial, but localized in `globals.css`.
 
 ### Neutral
 
-- Convenção `data-*` para estado pode parecer redundante com `aria-pressed` etc. — escolha consciente: ARIA = semântica para AT; `data-*` = hook para CSS/teste.
+- The `data-*` convention for state may look redundant with `aria-pressed` etc. — a conscious choice: ARIA = semantics for AT; `data-*` = hook for CSS/tests.
 
 ## Constitution adherence
 
-- **Princípio 5 (ADR para decisões arquiteturais):** este ADR registra a escolha. ✓
-- **"Menos é mais":** zero dependências novas, build inalterado, ferramentas familiares (CSS standard + tokens). ✓
-- **Tipagem estrita:** decisão respeita; CSS Modules não introduzem dynamic typing.
+- **Principle 5 (ADR for architectural decisions):** this ADR records the choice. ✓
+- **"Less is more":** zero new dependencies, build unchanged, familiar tools (standard CSS + tokens). ✓
+- **Strict typing:** the decision respects it; CSS Modules do not introduce dynamic typing.
 
 ## Future review
 
-Revisitar quando:
+Revisit when:
 
-- Aparecer pedido de dark mode com toggle do utilizador — desenhar overlay de tokens.
-- O design system passar a ser partilhado com outro projeto — considerar tokens em pacote separado (Style Dictionary, vanilla-extract).
-- O bundle de CSS crescer a ponto de virar problema medível — investigar critical CSS / route-level splitting do Next.js.
-- Aparecer demanda por theming multi-tenant (white-label) — tokens em `:root` já suportam, mas pode justificar abstração mais formal.
+- A dark-mode-with-toggle request appears — design the token overlay.
+- The design system is shared with another project — consider tokens in a separate package (Style Dictionary, vanilla-extract).
+- The CSS bundle grows to a measurable problem — investigate critical CSS / route-level splitting in Next.js.
+- A multi-tenant (white-label) theming demand appears — tokens in `:root` already support it, but a more formal abstraction may be warranted.

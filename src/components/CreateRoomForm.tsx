@@ -19,7 +19,7 @@ export function CreateRoomForm({ onSubmit, isSubmitting, errorMessage }: CreateR
     e.preventDefault();
     const trimmed = hostNickname.trim();
     if (!trimmed) {
-      setLocalError("Informe um apelido para criar a sala.");
+      setLocalError("Please enter a nickname to create the room.");
       return;
     }
     setLocalError(null);
@@ -35,13 +35,13 @@ export function CreateRoomForm({ onSubmit, isSubmitting, errorMessage }: CreateR
           Planning Poker
         </h1>
         <p className={styles.subtitle}>
-          Crie uma sala e compartilhe o link com seu time para começar a estimar.
+          Create a room and share the link with your team to start estimating.
         </p>
       </div>
 
       <div className={styles.field}>
         <label htmlFor="nickname" className={styles.label}>
-          Seu apelido
+          Your nickname
         </label>
         <input
           id="nickname"
@@ -58,7 +58,7 @@ export function CreateRoomForm({ onSubmit, isSubmitting, errorMessage }: CreateR
       </div>
 
       <fieldset disabled={isSubmitting} className={styles.fieldset}>
-        <legend className={styles.legend}>Escala de cartas</legend>
+        <legend className={styles.legend}>Card scale</legend>
         <div className={styles.scales}>
           {SCALE_IDS.map((id) => (
             <label key={id} className={styles.scale}>
@@ -76,7 +76,7 @@ export function CreateRoomForm({ onSubmit, isSubmitting, errorMessage }: CreateR
       </fieldset>
 
       <button type="submit" disabled={isSubmitting} className={styles.submit}>
-        {isSubmitting ? "Criando..." : "Criar sala"}
+        {isSubmitting ? "Creating..." : "Create room"}
       </button>
 
       {visibleError ? (

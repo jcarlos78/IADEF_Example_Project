@@ -1,8 +1,10 @@
 import { expect, test } from "@playwright/test";
 import { createRoomAsHost, setupRoomWithTwoUsers } from "./helpers";
 
-test.describe("AC7 — escala", () => {
-  test("escolher escala T-shirt na home cria sala com cartas XS..XXL", async ({ browser }) => {
+test.describe("AC7 — scale", () => {
+  test("picking T-shirt scale on the home creates a room with XS..XXL cards", async ({
+    browser,
+  }) => {
     const { page, ctx } = await createRoomAsHost(browser, {
       nickname: "H",
       scaleLabel: "T-shirt",
@@ -13,29 +15,29 @@ test.describe("AC7 — escala", () => {
     await ctx.close();
   });
 
-  test("facilitador troca escala entre rodadas; troca não é permitida durante rodada", async ({
+  test("facilitator switches the scale between rounds; switching is not allowed during a round", async ({
     browser,
   }) => {
     const { host, guest, hostCtx, guestCtx } = await setupRoomWithTwoUsers(browser);
 
-    // Default Fibonacci visível
+    // Default Fibonacci visible
     await expect(host.getByRole("button", { name: "13" })).toBeVisible();
 
-    // Troca para T-shirt (sem rodada — permitido)
-    await host.getByLabel(/^escala$/i).selectOption("tshirt");
+    // Switch to T-shirt (no round in progress — allowed)
+    await host.getByLabel(/^scale$/i).selectOption("tshirt");
     await expect(host.getByRole("button", { name: "XS" })).toBeVisible();
     await expect(host.getByRole("button", { name: "13" })).not.toBeVisible();
-    // Guest também vê o novo set
+    // Guest also sees the new set
     await expect(guest.getByRole("button", { name: "XS" })).toBeVisible();
 
-    // Inicia rodada → seletor de escala fica disabled
-    await host.getByRole("button", { name: /iniciar rodada/i }).click();
-    await expect(host.getByLabel(/^escala$/i)).toBeDisabled();
+    // Start a round → scale select becomes disabled
+    await host.getByRole("button", { name: /start round/i }).click();
+    await expect(host.getByLabel(/^scale$/i)).toBeDisabled();
 
-    // Após reveal, seletor reabilita
+    // After reveal, the select re-enables
     await host.getByRole("button", { name: "M" }).click();
-    await host.getByRole("button", { name: /^revelar$/i }).click();
-    await expect(host.getByLabel(/^escala$/i)).not.toBeDisabled();
+    await host.getByRole("button", { name: /^reveal$/i }).click();
+    await expect(host.getByLabel(/^scale$/i)).not.toBeDisabled();
 
     await hostCtx.close();
     await guestCtx.close();

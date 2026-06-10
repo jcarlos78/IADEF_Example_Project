@@ -11,7 +11,7 @@ export interface RoomErrorViewProps {
 export function RoomErrorView({
   title,
   description,
-  ctaLabel = "Criar nova sala",
+  ctaLabel = "Create a new room",
   ctaHref = "/",
 }: RoomErrorViewProps) {
   return (

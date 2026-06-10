@@ -18,7 +18,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     body = (await req.json()) as typeof body;
   } catch {
     return NextResponse.json(
-      { error: { code: "bad-request", message: "JSON inválido." } },
+      { error: { code: "bad-request", message: "Invalid JSON." } },
       { status: 400 },
     );
   }
@@ -28,13 +28,13 @@ export async function POST(req: Request): Promise<NextResponse> {
 
   if (!isScaleId(scaleId)) {
     return NextResponse.json(
-      { error: { code: "scale-invalid", message: "Escala não suportada." } },
+      { error: { code: "scale-invalid", message: "Unsupported scale." } },
       { status: 400 },
     );
   }
   if (!hostNickname) {
     return NextResponse.json(
-      { error: { code: "nickname-empty", message: "Apelido é obrigatório." } },
+      { error: { code: "nickname-empty", message: "Nickname is required." } },
       { status: 400 },
     );
   }

@@ -13,7 +13,7 @@ export interface CardPickerProps {
 export function CardPicker({ scaleId, selectedCard, onSelect, disabled }: CardPickerProps) {
   const scale = getScale(scaleId);
   return (
-    <div role="group" aria-label="Cartas para votar" className={styles.group}>
+    <div role="group" aria-label="Voting cards" className={styles.group}>
       {scale.cards.map((card) => {
         const isSelected = selectedCard === card;
         return (

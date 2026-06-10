@@ -5,70 +5,70 @@ import { describe, expect, it, vi } from "vitest";
 import { NicknameDialog } from "./NicknameDialog";
 
 describe("NicknameDialog — AC2, AC8", () => {
-  it("renderiza título e descrição padrão", () => {
+  it("renders the default title and description", () => {
     render(<NicknameDialog onSubmit={vi.fn()} />);
-    expect(screen.getByRole("heading", { name: /entre na sala/i })).toBeInTheDocument();
-    expect(screen.getByText(/apelido para participar/i)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /join the room/i })).toBeInTheDocument();
+    expect(screen.getByText(/pick a nickname/i)).toBeInTheDocument();
   });
 
-  it("não chama onSubmit quando apelido está vazio", async () => {
+  it("does not call onSubmit when nickname is empty", async () => {
     const onSubmit = vi.fn();
     const user = userEvent.setup();
     render(<NicknameDialog onSubmit={onSubmit} />);
-    await user.click(screen.getByRole("button", { name: /entrar/i }));
+    await user.click(screen.getByRole("button", { name: /^join$/i }));
     expect(onSubmit).not.toHaveBeenCalled();
-    expect(screen.getByRole("alert")).toHaveTextContent(/apelido/i);
+    expect(screen.getByRole("alert")).toHaveTextContent(/nickname/i);
   });
 
-  it("chama onSubmit com apelido trimado", async () => {
+  it("calls onSubmit with a trimmed nickname", async () => {
     const onSubmit = vi.fn();
     const user = userEvent.setup();
     render(<NicknameDialog onSubmit={onSubmit} />);
-    await user.type(screen.getByLabelText(/apelido/i), "  Alice  ");
-    await user.click(screen.getByRole("button", { name: /entrar/i }));
+    await user.type(screen.getByLabelText(/nickname/i), "  Alice  ");
+    await user.click(screen.getByRole("button", { name: /^join$/i }));
     expect(onSubmit).toHaveBeenCalledWith("Alice");
   });
 
-  it("submete via Enter", async () => {
+  it("submits via Enter", async () => {
     const onSubmit = vi.fn();
     const user = userEvent.setup();
     render(<NicknameDialog onSubmit={onSubmit} />);
-    await user.type(screen.getByLabelText(/apelido/i), "Bob{Enter}");
+    await user.type(screen.getByLabelText(/nickname/i), "Bob{Enter}");
     expect(onSubmit).toHaveBeenCalledWith("Bob");
   });
 
-  it("exibe errorMessage externa (ex.: apelido duplicado vindo do servidor)", () => {
+  it("shows external errorMessage (e.g. duplicate nickname from the server)", () => {
     render(
       <NicknameDialog
         onSubmit={vi.fn()}
-        errorMessage='Apelido "Alice" já está em uso nesta sala.'
+        errorMessage='Nickname "Alice" is already in use in this room.'
       />,
     );
-    expect(screen.getByRole("alert")).toHaveTextContent(/já está em uso/i);
+    expect(screen.getByRole("alert")).toHaveTextContent(/already in use/i);
   });
 
-  it("erro local tem prioridade sobre errorMessage externa", async () => {
+  it("local error takes precedence over external errorMessage", async () => {
     const user = userEvent.setup();
-    render(<NicknameDialog onSubmit={vi.fn()} errorMessage="Erro do servidor" />);
-    await user.click(screen.getByRole("button", { name: /entrar/i }));
-    expect(screen.getByRole("alert")).toHaveTextContent(/apelido é obrigatório/i);
+    render(<NicknameDialog onSubmit={vi.fn()} errorMessage="Server error" />);
+    await user.click(screen.getByRole("button", { name: /^join$/i }));
+    expect(screen.getByRole("alert")).toHaveTextContent(/nickname is required/i);
   });
 
-  it("desabilita botão e input enquanto isSubmitting", () => {
+  it("disables button and input while isSubmitting", () => {
     render(<NicknameDialog onSubmit={vi.fn()} isSubmitting />);
-    expect(screen.getByRole("button", { name: /entrando/i })).toBeDisabled();
-    expect(screen.getByLabelText(/apelido/i)).toBeDisabled();
+    expect(screen.getByRole("button", { name: /joining/i })).toBeDisabled();
+    expect(screen.getByLabelText(/nickname/i)).toBeDisabled();
   });
 
-  it("aceita título e descrição customizados", () => {
+  it("accepts a custom title and description", () => {
     render(
       <NicknameDialog
         onSubmit={vi.fn()}
-        title="Sala da equipe X"
-        description="Use o seu nome de Slack."
+        title="Team X room"
+        description="Use your Slack handle."
       />,
     );
-    expect(screen.getByRole("heading", { name: /sala da equipe x/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /team x room/i })).toBeInTheDocument();
     expect(screen.getByText(/slack/i)).toBeInTheDocument();
   });
 });

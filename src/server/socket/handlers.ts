@@ -58,7 +58,7 @@ export function registerHandlers(deps: HandlersDeps): void {
     if (!room) {
       ack({
         ok: false,
-        error: errPayload("room-not-found", "Sala não encontrada ou expirada."),
+        error: errPayload("room-not-found", "Room not found or expired."),
       });
       return;
     }
@@ -90,7 +90,7 @@ export function registerHandlers(deps: HandlersDeps): void {
           now: now(),
         });
       } catch (err) {
-        const msg = err instanceof Error ? err.message : "Falha ao criar sala.";
+        const msg = err instanceof Error ? err.message : "Failed to create the room.";
         const code: ErrorPayload["code"] = /scaleId/.test(msg) ? "scale-invalid" : "nickname-empty";
         logger.warn({ event: "room.create.rejected", reason: code }, msg);
         ack({ ok: false, error: errPayload(code, msg) });
@@ -114,7 +114,7 @@ export function registerHandlers(deps: HandlersDeps): void {
         logger.warn({ event: "join.rejected", roomId: payload.roomId, reason: "room-not-found" });
         ack({
           ok: false,
-          error: errPayload("room-not-found", "Sala não encontrada ou expirada."),
+          error: errPayload("room-not-found", "Room not found or expired."),
         });
         return;
       }
@@ -148,7 +148,7 @@ export function registerHandlers(deps: HandlersDeps): void {
       if (!room) {
         ack({
           ok: false,
-          error: errPayload("room-not-found", "Sala não encontrada ou expirada."),
+          error: errPayload("room-not-found", "Room not found or expired."),
         });
         return;
       }

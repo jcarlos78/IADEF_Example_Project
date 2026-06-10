@@ -15,8 +15,8 @@ export function NicknameDialog({
   onSubmit,
   errorMessage,
   isSubmitting,
-  title = "Entre na sala",
-  description = "Escolha um apelido para participar da votação.",
+  title = "Join the room",
+  description = "Pick a nickname to join the vote.",
 }: NicknameDialogProps) {
   const [nickname, setNickname] = useState("");
   const [localError, setLocalError] = useState<string | null>(null);
@@ -25,7 +25,7 @@ export function NicknameDialog({
     e.preventDefault();
     const trimmed = nickname.trim();
     if (!trimmed) {
-      setLocalError("Apelido é obrigatório.");
+      setLocalError("Nickname is required.");
       return;
     }
     setLocalError(null);
@@ -45,7 +45,7 @@ export function NicknameDialog({
 
       <div className={styles.field}>
         <label htmlFor="nickname-dialog-input" className={styles.label}>
-          Apelido
+          Nickname
         </label>
         <input
           id="nickname-dialog-input"
@@ -61,7 +61,7 @@ export function NicknameDialog({
       </div>
 
       <button type="submit" disabled={isSubmitting} className={styles.submit}>
-        {isSubmitting ? "Entrando..." : "Entrar"}
+        {isSubmitting ? "Joining..." : "Join"}
       </button>
 
       {visibleError ? (

@@ -31,7 +31,7 @@ function freshRoom(now = 1_000): RoomState {
     roomId: "room-1",
     scaleId: "fibonacci",
     hostSessionId: HOST,
-    hostNickname: "Anfitriã",
+    hostNickname: "Host",
     now,
   });
 }
@@ -53,17 +53,17 @@ function assertOk<T extends { ok: true; state: RoomState } | { ok: false }>(
 }
 
 describe("createRoom", () => {
-  it("cria sala com host como único participante", () => {
+  it("creates a room with the host as the only participant", () => {
     const s = freshRoom(1000);
     expect(s.roomId).toBe("room-1");
     expect(s.hostSessionId).toBe(HOST);
     expect(Object.keys(s.participants)).toEqual([HOST]);
-    expect(s.participants[HOST].nickname).toBe("Anfitriã");
+    expect(s.participants[HOST].nickname).toBe("Host");
     expect(s.round).toBeNull();
     expect(s.createdAt).toBe(1000);
   });
 
-  it("rejeita hostNickname vazio", () => {
+  it("rejects empty hostNickname", () => {
     expect(() =>
       createRoom({
         roomId: "r",
@@ -75,7 +75,7 @@ describe("createRoom", () => {
     ).toThrow(/hostNickname/);
   });
 
-  it("rejeita scaleId inválido", () => {
+  it("rejects invalid scaleId", () => {
     expect(() =>
       createRoom({
         roomId: "r",
@@ -89,7 +89,7 @@ describe("createRoom", () => {
 });
 
 describe("joinRoom (AC2, AC8, AC12)", () => {
-  it("adiciona um novo participante", () => {
+  it("adds a new participant", () => {
     const r = joinRoom(freshRoom(), { sessionId: ALICE, nickname: "Alice", now: 2_000 });
     assertOk(r);
     expect(Object.keys(r.state.participants)).toHaveLength(2);
@@ -97,19 +97,19 @@ describe("joinRoom (AC2, AC8, AC12)", () => {
     expect(r.state.participants[ALICE].joinedAt).toBe(2_000);
   });
 
-  it("rejeita apelido vazio", () => {
+  it("rejects an empty nickname", () => {
     const r = joinRoom(freshRoom(), { sessionId: ALICE, nickname: "  ", now: 2_000 });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.error.code).toBe("nickname-empty");
   });
 
-  it("rejeita apelido duplicado na mesma sala", () => {
-    const r = joinRoom(freshRoom(), { sessionId: ALICE, nickname: "Anfitriã", now: 2_000 });
+  it("rejects a duplicate nickname in the same room", () => {
+    const r = joinRoom(freshRoom(), { sessionId: ALICE, nickname: "Host", now: 2_000 });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.error.code).toBe("nickname-duplicate");
   });
 
-  it("permite mesmo sessionId reconectar (mantém joinedAt original)", () => {
+  it("allows the same sessionId to reconnect (keeps the original joinedAt)", () => {
     let s = freshRoom();
     const r1 = joinRoom(s, { sessionId: ALICE, nickname: "Alice", now: 2_000 });
     assertOk(r1);
@@ -120,7 +120,7 @@ describe("joinRoom (AC2, AC8, AC12)", () => {
     expect(r2.state.participants[ALICE].connected).toBe(true);
   });
 
-  it("trimma o apelido", () => {
+  it("trims the nickname", () => {
     const r = joinRoom(freshRoom(), { sessionId: ALICE, nickname: "  Alice  ", now: 2_000 });
     assertOk(r);
     expect(r.state.participants[ALICE].nickname).toBe("Alice");
@@ -128,26 +128,26 @@ describe("joinRoom (AC2, AC8, AC12)", () => {
 });
 
 describe("leaveRoom", () => {
-  it("remove participante", () => {
+  it("removes a participant", () => {
     const r = leaveRoom(withAliceAndBob(), { sessionId: ALICE, now: 3_000 });
     assertOk(r);
     expect(r.state.participants).not.toHaveProperty(ALICE);
     expect(r.state.participants).toHaveProperty(BOB);
   });
 
-  it("rejeita session-unknown", () => {
+  it("rejects session-unknown", () => {
     const r = leaveRoom(freshRoom(), { sessionId: "nope", now: 3_000 });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.error.code).toBe("session-unknown");
   });
 
-  it("ao sair, host é transferido para o mais antigo (AC10)", () => {
+  it("when leaving, host is transferred to the oldest participant (AC10)", () => {
     const r = leaveRoom(withAliceAndBob(), { sessionId: HOST, now: 3_000 });
     assertOk(r);
     expect(r.state.hostSessionId).toBe(ALICE);
   });
 
-  it("remove voto da rodada se sair antes da revelação", () => {
+  it("removes the round vote if the participant leaves before reveal", () => {
     let s = withAliceAndBob();
     const start = startRound(s, { sessionId: HOST, now: 3_000 });
     assertOk(start);
@@ -162,14 +162,14 @@ describe("leaveRoom", () => {
 });
 
 describe("startRound", () => {
-  it("rejeita não-host", () => {
+  it("rejects non-host", () => {
     const s = withAliceAndBob();
     const r = startRound(s, { sessionId: ALICE, now: 3_000 });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.error.code).toBe("not-host");
   });
 
-  it("rejeita se rodada em andamento", () => {
+  it("rejects when a round is already in progress", () => {
     let s = withAliceAndBob();
     const r1 = startRound(s, { sessionId: HOST, now: 3_000 });
     assertOk(r1);
@@ -179,7 +179,7 @@ describe("startRound", () => {
     if (!r2.ok) expect(r2.error.code).toBe("round-in-progress");
   });
 
-  it("inicia rodada com título opcional", () => {
+  it("starts a round with an optional title", () => {
     const r = startRound(freshRoom(), { sessionId: HOST, title: "US-42", now: 3_000 });
     assertOk(r);
     expect(r.state.round?.title).toBe("US-42");
@@ -187,7 +187,7 @@ describe("startRound", () => {
     expect(r.state.round?.votes).toEqual({});
   });
 
-  it("após revelar, é possível iniciar nova rodada (AC6)", () => {
+  it("after reveal, a new round can be started (AC6)", () => {
     let s = withAliceAndBob();
     s = unwrap(startRound(s, { sessionId: HOST, now: 3_000 }));
     s = unwrap(castVote(s, { sessionId: HOST, card: "3", now: 3_100 }));
@@ -199,13 +199,13 @@ describe("startRound", () => {
 });
 
 describe("castVote (AC3)", () => {
-  it("rejeita se não há rodada", () => {
+  it("rejects when there is no round", () => {
     const r = castVote(freshRoom(), { sessionId: HOST, card: "3", now: 3_000 });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.error.code).toBe("no-round");
   });
 
-  it("rejeita carta fora da escala", () => {
+  it("rejects a card not in the scale", () => {
     let s = freshRoom();
     s = unwrap(startRound(s, { sessionId: HOST, now: 3_000 }));
     const r = castVote(s, { sessionId: HOST, card: "M", now: 3_100 });
@@ -213,7 +213,7 @@ describe("castVote (AC3)", () => {
     if (!r.ok) expect(r.error.code).toBe("card-invalid");
   });
 
-  it("rejeita sessão desconhecida", () => {
+  it("rejects an unknown session", () => {
     let s = freshRoom();
     s = unwrap(startRound(s, { sessionId: HOST, now: 3_000 }));
     const r = castVote(s, { sessionId: "unknown", card: "3", now: 3_100 });
@@ -221,7 +221,7 @@ describe("castVote (AC3)", () => {
     if (!r.ok) expect(r.error.code).toBe("session-unknown");
   });
 
-  it("aceita voto válido sem expor para outros antes da revelação (AC3)", () => {
+  it("accepts a valid vote without leaking it to others before reveal (AC3)", () => {
     let s = withAliceAndBob();
     s = unwrap(startRound(s, { sessionId: HOST, now: 3_000 }));
     s = unwrap(castVote(s, { sessionId: ALICE, card: "5", now: 3_100 }));
@@ -232,7 +232,7 @@ describe("castVote (AC3)", () => {
     expect(JSON.stringify(pub)).not.toContain('"5"');
   });
 
-  it("permite trocar o voto antes da revelação", () => {
+  it("allows changing the vote before reveal", () => {
     let s = withAliceAndBob();
     s = unwrap(startRound(s, { sessionId: HOST, now: 3_000 }));
     s = unwrap(castVote(s, { sessionId: ALICE, card: "5", now: 3_100 }));
@@ -240,7 +240,7 @@ describe("castVote (AC3)", () => {
     expect(s.round?.votes[ALICE]).toBe("8");
   });
 
-  it("rejeita voto após revelação", () => {
+  it("rejects a vote after reveal", () => {
     let s = withAliceAndBob();
     s = unwrap(startRound(s, { sessionId: HOST, now: 3_000 }));
     s = unwrap(revealRound(s, { sessionId: HOST, now: 3_100 }));
@@ -251,7 +251,7 @@ describe("castVote (AC3)", () => {
 });
 
 describe("revealRound (AC4, AC5)", () => {
-  it("rejeita não-host", () => {
+  it("rejects non-host", () => {
     let s = withAliceAndBob();
     s = unwrap(startRound(s, { sessionId: HOST, now: 3_000 }));
     const r = revealRound(s, { sessionId: ALICE, now: 3_100 });
@@ -259,7 +259,7 @@ describe("revealRound (AC4, AC5)", () => {
     if (!r.ok) expect(r.error.code).toBe("not-host");
   });
 
-  it("calcula estatísticas a partir dos votos", () => {
+  it("computes statistics from the votes", () => {
     let s = withAliceAndBob();
     s = unwrap(startRound(s, { sessionId: HOST, now: 3_000 }));
     s = unwrap(castVote(s, { sessionId: HOST, card: "3", now: 3_100 }));
@@ -277,13 +277,13 @@ describe("revealRound (AC4, AC5)", () => {
 });
 
 describe("resetRound (AC6)", () => {
-  it("rejeita não-host", () => {
+  it("rejects non-host", () => {
     const r = resetRound(freshRoom(), { sessionId: ALICE, now: 3_000 });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.error.code).toBe("not-host");
   });
 
-  it("descarta a rodada atual", () => {
+  it("discards the current round", () => {
     let s = freshRoom();
     s = unwrap(startRound(s, { sessionId: HOST, now: 3_000 }));
     s = unwrap(castVote(s, { sessionId: HOST, card: "3", now: 3_100 }));
@@ -294,19 +294,19 @@ describe("resetRound (AC6)", () => {
 });
 
 describe("changeScale (AC7)", () => {
-  it("rejeita não-host", () => {
+  it("rejects non-host", () => {
     const r = changeScale(freshRoom(), { sessionId: ALICE, scaleId: "tshirt", now: 3_000 });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.error.code).toBe("not-host");
   });
 
-  it("rejeita escala inexistente", () => {
+  it("rejects a non-existent scale", () => {
     const r = changeScale(freshRoom(), { sessionId: HOST, scaleId: "bogus", now: 3_000 });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.error.code).toBe("scale-invalid");
   });
 
-  it("rejeita troca durante rodada não-revelada", () => {
+  it("rejects switching during an unrevealed round", () => {
     let s = freshRoom();
     s = unwrap(startRound(s, { sessionId: HOST, now: 3_000 }));
     const r = changeScale(s, { sessionId: HOST, scaleId: "tshirt", now: 3_100 });
@@ -314,7 +314,7 @@ describe("changeScale (AC7)", () => {
     if (!r.ok) expect(r.error.code).toBe("round-in-progress");
   });
 
-  it("aceita troca sem rodada", () => {
+  it("accepts switching when there is no round", () => {
     const r = changeScale(freshRoom(), {
       sessionId: HOST,
       scaleId: "tshirt",
@@ -324,7 +324,7 @@ describe("changeScale (AC7)", () => {
     expect(r.state.scaleId).toBe("tshirt");
   });
 
-  it("aceita troca após revelar", () => {
+  it("accepts switching after reveal", () => {
     let s = freshRoom();
     s = unwrap(startRound(s, { sessionId: HOST, now: 3_000 }));
     s = unwrap(revealRound(s, { sessionId: HOST, now: 3_100 }));
@@ -338,13 +338,13 @@ describe("transferHostIfNeeded (AC10)", () => {
   beforeEach(() => vi.useFakeTimers());
   afterEach(() => vi.useRealTimers());
 
-  it("no-op se host está conectado", () => {
+  it("no-op if the host is connected", () => {
     const s = withAliceAndBob();
     const after = transferHostIfNeeded(s, { gracePeriodMs: 30_000, now: 100_000 });
     expect(after.hostSessionId).toBe(HOST);
   });
 
-  it("no-op dentro do grace period", () => {
+  it("no-op within the grace period", () => {
     let s = withAliceAndBob();
     s = unwrap(markDisconnected(s, { sessionId: HOST, now: 100_000 }));
     const after = transferHostIfNeeded(s, {
@@ -354,7 +354,7 @@ describe("transferHostIfNeeded (AC10)", () => {
     expect(after.hostSessionId).toBe(HOST);
   });
 
-  it("promove mais antigo conectado após grace period", () => {
+  it("promotes the oldest connected participant after the grace period", () => {
     let s = withAliceAndBob();
     s = unwrap(markDisconnected(s, { sessionId: HOST, now: 100_000 }));
     const after = transferHostIfNeeded(s, {
@@ -364,7 +364,7 @@ describe("transferHostIfNeeded (AC10)", () => {
     expect(after.hostSessionId).toBe(ALICE);
   });
 
-  it("se Alice também desconectou, promove Bob (conectado)", () => {
+  it("if Alice also disconnected, promotes Bob (still connected)", () => {
     let s = withAliceAndBob();
     s = unwrap(markDisconnected(s, { sessionId: HOST, now: 100_000 }));
     s = unwrap(markDisconnected(s, { sessionId: ALICE, now: 100_100 }));
@@ -376,8 +376,8 @@ describe("transferHostIfNeeded (AC10)", () => {
   });
 });
 
-describe("toPublic — AC3 (não vaza votos antes de revelar)", () => {
-  it("antes da revelação: round.result é null e nenhum voto aparece", () => {
+describe("toPublic — AC3 (does not leak votes before reveal)", () => {
+  it("before reveal: round.result is null and no vote shows up", () => {
     let s = withAliceAndBob();
     s = unwrap(startRound(s, { sessionId: HOST, now: 3_000 }));
     s = unwrap(castVote(s, { sessionId: ALICE, card: "13", now: 3_100 }));
@@ -390,7 +390,7 @@ describe("toPublic — AC3 (não vaza votos antes de revelar)", () => {
     expect(json).not.toContain('"21"');
   });
 
-  it("após revelar: result contém todos os votos", () => {
+  it("after reveal: result contains every vote", () => {
     let s = withAliceAndBob();
     s = unwrap(startRound(s, { sessionId: HOST, now: 3_000 }));
     s = unwrap(castVote(s, { sessionId: ALICE, card: "13", now: 3_100 }));
@@ -400,7 +400,7 @@ describe("toPublic — AC3 (não vaza votos antes de revelar)", () => {
     expect(pub.round?.result?.votesBySession[ALICE]).toBe("13");
   });
 
-  it("ordena participantes por joinedAt (host primeiro, depois Alice, Bob)", () => {
+  it("orders participants by joinedAt (host first, then Alice, then Bob)", () => {
     const pub = toPublic(withAliceAndBob());
     expect(pub.participants.map((p) => p.sessionId)).toEqual([HOST, ALICE, BOB]);
     expect(pub.participants[0].isHost).toBe(true);

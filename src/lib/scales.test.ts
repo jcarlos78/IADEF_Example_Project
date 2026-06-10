@@ -2,42 +2,42 @@ import { describe, expect, it } from "vitest";
 import { getScale, isScaleId, SCALES, SCALE_IDS, type ScaleId } from "./scales";
 
 describe("getScale", () => {
-  it.each(SCALE_IDS)("retorna a escala '%s' com id consistente", (id) => {
+  it.each(SCALE_IDS)("returns the '%s' scale with a consistent id", (id) => {
     const scale = getScale(id);
     expect(scale.id).toBe(id);
     expect(scale.cards.length).toBeGreaterThan(0);
     expect(scale.label).toBeTypeOf("string");
   });
 
-  it("lança erro com mensagem que inclui o id desconhecido", () => {
-    expect(() => getScale("foo")).toThrow(/Escala desconhecida: "foo"/);
+  it("throws with a message that includes the unknown id", () => {
+    expect(() => getScale("foo")).toThrow(/Unknown scale: "foo"/);
   });
 
-  it("lista as escalas disponíveis na mensagem de erro", () => {
+  it("lists the available scales in the error message", () => {
     expect(() => getScale("nope")).toThrow(/fibonacci.*fibonacci-mod.*tshirt/);
   });
 
-  it("rejeita string vazia", () => {
-    expect(() => getScale("")).toThrow(/Escala desconhecida/);
+  it("rejects an empty string", () => {
+    expect(() => getScale("")).toThrow(/Unknown scale/);
   });
 });
 
 describe("isScaleId", () => {
-  it.each(SCALE_IDS)("aceita '%s'", (id) => {
+  it.each(SCALE_IDS)("accepts '%s'", (id) => {
     expect(isScaleId(id)).toBe(true);
   });
 
-  it.each(["", "foo", "FIBONACCI", " fibonacci ", "tshirt-xl"])("rejeita '%s'", (id) => {
+  it.each(["", "foo", "FIBONACCI", " fibonacci ", "tshirt-xl"])("rejects '%s'", (id) => {
     expect(isScaleId(id)).toBe(false);
   });
 });
 
-describe("SCALES — formato definido no spec", () => {
-  it("Fibonacci: 10 cartas (AC7)", () => {
+describe("SCALES — shape defined by the spec", () => {
+  it("Fibonacci: 10 cards (AC7)", () => {
     expect(SCALES.fibonacci.cards).toEqual(["0", "1", "2", "3", "5", "8", "13", "21", "?", "☕"]);
   });
 
-  it("Fibonacci modificada: inclui ½, 20, 40, 100", () => {
+  it("Modified Fibonacci: includes ½, 20, 40, 100", () => {
     expect(SCALES["fibonacci-mod"].cards).toEqual([
       "0",
       "½",
@@ -55,18 +55,18 @@ describe("SCALES — formato definido no spec", () => {
     ]);
   });
 
-  it("T-shirt: XS..XXL + cartas especiais", () => {
+  it("T-shirt: XS..XXL + special cards", () => {
     expect(SCALES.tshirt.cards).toEqual(["XS", "S", "M", "L", "XL", "XXL", "?", "☕"]);
   });
 
-  it("toda escala termina com ? e ☕ como cartas especiais", () => {
+  it("every scale ends with ? and ☕ as special cards", () => {
     for (const scale of Object.values(SCALES)) {
       const last2 = scale.cards.slice(-2);
       expect(last2).toEqual(["?", "☕"]);
     }
   });
 
-  it("nenhuma escala tem cartas duplicadas", () => {
+  it("no scale has duplicate cards", () => {
     for (const scale of Object.values(SCALES)) {
       expect(new Set(scale.cards).size).toBe(scale.cards.length);
     }
@@ -74,7 +74,7 @@ describe("SCALES — formato definido no spec", () => {
 });
 
 describe("SCALE_IDS", () => {
-  it("expõe exatamente as 3 escalas declaradas", () => {
+  it("exposes exactly the 3 declared scales", () => {
     expect(SCALE_IDS.sort()).toEqual(
       (["fibonacci", "fibonacci-mod", "tshirt"] as ScaleId[]).sort(),
     );

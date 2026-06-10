@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { setupRoomWithTwoUsers } from "./helpers";
 
 test.describe("AC10 — host handoff", () => {
-  test("host fecha aba, após grace period o mais antigo conectado é promovido", async ({
+  test("host closes the tab; after the grace period the oldest connected is promoted", async ({
     browser,
   }) => {
     const { host, guest, hostCtx, guestCtx } = await setupRoomWithTwoUsers(browser, {
@@ -10,20 +10,20 @@ test.describe("AC10 — host handoff", () => {
       guestName: "Alice",
     });
 
-    // Guest ainda NÃO é host
-    await expect(guest.getByText(/você é o facilitador/i)).not.toBeVisible();
+    // Guest is NOT host yet
+    await expect(guest.getByText(/you are the facilitator/i)).not.toBeVisible();
 
-    // Host fecha tudo
+    // Host closes everything
     await hostCtx.close();
-    void host; // referência mantida apenas para typecheck
+    void host; // reference kept for typecheck only
 
-    // Em ~2s (HOST_GRACE_MS) + ~300ms (TICK_INTERVAL_MS), Alice vira facilitadora
-    await expect(guest.getByText(/você é o facilitador/i)).toBeVisible({
+    // Within ~2s (HOST_GRACE_MS) + ~300ms (TICK_INTERVAL_MS), Alice becomes facilitator
+    await expect(guest.getByText(/you are the facilitator/i)).toBeVisible({
       timeout: 5_000,
     });
 
-    // E os controles do facilitador aparecem
-    await expect(guest.getByRole("button", { name: /iniciar rodada/i })).toBeVisible();
+    // And the facilitator controls appear
+    await expect(guest.getByRole("button", { name: /start round/i })).toBeVisible();
 
     await guestCtx.close();
   });

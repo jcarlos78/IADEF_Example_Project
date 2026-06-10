@@ -30,13 +30,13 @@ export default function HomePage() {
         const body = (await res.json().catch(() => ({}))) as {
           error?: { message?: string };
         };
-        setErrorMessage(body.error?.message ?? "Falha ao criar sala.");
+        setErrorMessage(body.error?.message ?? "Failed to create the room.");
         return;
       }
       const data = (await res.json()) as { roomId: string };
       router.push(`/room/${data.roomId}`);
     } catch {
-      setErrorMessage("Erro de rede ao criar sala.");
+      setErrorMessage("Network error while creating the room.");
     } finally {
       setIsSubmitting(false);
     }

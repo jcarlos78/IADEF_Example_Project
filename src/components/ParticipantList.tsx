@@ -14,11 +14,11 @@ function initials(name: string): string {
 
 export function ParticipantList({ participants, hasActiveRound }: ParticipantListProps) {
   if (participants.length === 0) {
-    return <p className={styles.empty}>Ninguém na sala ainda.</p>;
+    return <p className={styles.empty}>Nobody in the room yet.</p>;
   }
 
   return (
-    <ul aria-label="Participantes da sala" className={styles.list}>
+    <ul aria-label="Room participants" className={styles.list}>
       {participants.map((p) => {
         const itemClass = `${styles.item}${!p.connected ? ` ${styles.itemOffline}` : ""}`;
         return (
@@ -29,8 +29,8 @@ export function ParticipantList({ participants, hasActiveRound }: ParticipantLis
             <span className={styles.name}>{p.nickname}</span>
             <span className={styles.badges}>
               {p.isHost ? (
-                <span aria-label="facilitador" className={`${styles.badge} ${styles.badgeHost}`}>
-                  facilitador
+                <span aria-label="facilitator" className={`${styles.badge} ${styles.badgeHost}`}>
+                  facilitator
                 </span>
               ) : null}
               {!p.connected ? (
@@ -39,16 +39,16 @@ export function ParticipantList({ participants, hasActiveRound }: ParticipantLis
                 </span>
               ) : null}
               {hasActiveRound && p.hasVoted ? (
-                <span aria-label="votou" className={`${styles.badge} ${styles.badgeVoted}`}>
-                  ✓ votou
+                <span aria-label="voted" className={`${styles.badge} ${styles.badgeVoted}`}>
+                  ✓ voted
                 </span>
               ) : null}
               {hasActiveRound && !p.hasVoted ? (
                 <span
-                  aria-label="aguardando voto"
+                  aria-label="waiting for vote"
                   className={`${styles.badge} ${styles.badgeWaiting}`}
                 >
-                  aguardando…
+                  waiting…
                 </span>
               ) : null}
             </span>

@@ -5,7 +5,7 @@ export class RoomStore {
 
   create(state: RoomState): RoomState {
     if (this.rooms.has(state.roomId)) {
-      throw new Error(`Sala "${state.roomId}" já existe.`);
+      throw new Error(`Room "${state.roomId}" already exists.`);
     }
     this.rooms.set(state.roomId, state);
     return state;
@@ -17,7 +17,7 @@ export class RoomStore {
 
   update(state: RoomState): RoomState {
     if (!this.rooms.has(state.roomId)) {
-      throw new Error(`Sala "${state.roomId}" não existe.`);
+      throw new Error(`Room "${state.roomId}" does not exist.`);
     }
     this.rooms.set(state.roomId, state);
     return state;

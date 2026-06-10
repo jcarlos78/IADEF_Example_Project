@@ -4,28 +4,28 @@ import { describe, expect, it } from "vitest";
 import { RoomErrorView } from "./RoomErrorView";
 
 describe("RoomErrorView — AC11", () => {
-  it("renderiza título, descrição e CTA padrão para Criar nova sala", () => {
-    render(<RoomErrorView title="Sala não encontrada" description="Pode ter expirado." />);
-    expect(screen.getByRole("heading", { name: /sala não encontrada/i })).toBeInTheDocument();
-    expect(screen.getByText(/pode ter expirado/i)).toBeInTheDocument();
-    const link = screen.getByRole("link", { name: /criar nova sala/i });
+  it("renders the title, description and default Create new room CTA", () => {
+    render(<RoomErrorView title="Room not found" description="It may have expired." />);
+    expect(screen.getByRole("heading", { name: /room not found/i })).toBeInTheDocument();
+    expect(screen.getByText(/it may have expired/i)).toBeInTheDocument();
+    const link = screen.getByRole("link", { name: /create a new room/i });
     expect(link).toHaveAttribute("href", "/");
   });
 
-  it("aceita CTA customizado", () => {
+  it("accepts a custom CTA", () => {
     render(
       <RoomErrorView
-        title="Sala fechada"
-        description="O TTL acabou."
-        ctaLabel="Voltar ao início"
+        title="Room closed"
+        description="The TTL elapsed."
+        ctaLabel="Back to home"
         ctaHref="/start"
       />,
     );
-    const link = screen.getByRole("link", { name: /voltar ao início/i });
+    const link = screen.getByRole("link", { name: /back to home/i });
     expect(link).toHaveAttribute("href", "/start");
   });
 
-  it("é anunciado como alert (acessibilidade)", () => {
+  it("is announced as an alert (accessibility)", () => {
     render(<RoomErrorView title="X" description="Y" />);
     expect(screen.getByRole("alert")).toBeInTheDocument();
   });

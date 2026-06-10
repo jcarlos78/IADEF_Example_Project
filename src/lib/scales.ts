@@ -14,7 +14,7 @@ export const SCALES: Record<ScaleId, Scale> = {
   },
   "fibonacci-mod": {
     id: "fibonacci-mod",
-    label: "Fibonacci modificada",
+    label: "Modified Fibonacci",
     cards: ["0", "½", "1", "2", "3", "5", "8", "13", "20", "40", "100", "?", "☕"],
   },
   tshirt: {
@@ -34,5 +34,5 @@ export function getScale(id: string): Scale {
   if (isScaleId(id)) {
     return SCALES[id];
   }
-  throw new Error(`Escala desconhecida: "${id}". Use uma de: ${SCALE_IDS.join(", ")}.`);
+  throw new Error(`Unknown scale: "${id}". Use one of: ${SCALE_IDS.join(", ")}.`);
 }

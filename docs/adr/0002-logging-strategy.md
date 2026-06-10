@@ -1,4 +1,4 @@
-# ADR 0002 — Logging estruturado com Pino
+# ADR 0002 — Structured logging with Pino
 
 - **Status:** accepted
 - **Date:** 2026-06-09
@@ -6,29 +6,29 @@
 
 ## Context
 
-O `.claude/CLAUDE.md` referencia explicitamente este ADR ("Logging: follow the convention defined in `docs/adr/0002-logging-strategy.md` (create one if missing)"). O Princípio 8 da constituição exige falha visível: erros operacionais não podem ser silenciados, devem ser logados em nível apropriado e propagar quando útil.
+The `.claude/CLAUDE.md` explicitly references this ADR ("Logging: follow the convention defined in `docs/adr/0002-logging-strategy.md`"). Principle 8 of the constitution requires failures to be visible: operational errors cannot be silenced; they must be logged at the right level and propagated when useful.
 
-O primeiro feature do projeto (planning poker) tem servidor Node + Socket.IO, onde precisamos rastrear:
-- conexões e desconexões de WebSocket,
-- transições de estado de sala (criada, votação iniciada, revelada, descartada por TTL),
-- erros de protocolo (evento desconhecido, voto fora de rodada, apelido duplicado).
+The project's first feature (planning poker) has a Node + Socket.IO backend, where we need to track:
+- WebSocket connects and disconnects,
+- room state transitions (created, vote started, revealed, discarded by TTL),
+- protocol errors (unknown event, vote outside a round, duplicate nickname).
 
-Não há logging existente para preservar; partimos do zero.
+There is no existing logging to preserve; we start from scratch.
 
 ## Decision
 
-Adotaremos **Pino** como biblioteca de logging do backend Node, em formato **JSON estruturado**, com a convenção abaixo aplicável a todo o projeto:
+We will adopt **Pino** as the Node backend's logging library, in **structured JSON** format, with the convention below applicable to the whole project:
 
-- **Níveis** usados: `trace` (dev only), `debug` (dev + opt-in em prod), `info` (eventos de negócio relevantes), `warn` (situações esperadas mas anormais — apelido duplicado, sala não encontrada), `error` (falha que escapou do handler — exceção não tratada, bug).
-- **Nível padrão em prod:** `info`. Em dev: `debug`. Controlado por env var `LOG_LEVEL`.
-- **Formato:** JSON em produção (`{level, time, msg, ...context}`), pretty-print (`pino-pretty`) em desenvolvimento — alternado por `NODE_ENV`.
-- **Campos obrigatórios em todo log de evento de negócio:** `roomId` (quando aplicável), `event` (nome do evento, ex.: `room.created`, `vote.cast`, `round.revealed`).
-- **Sem PII no log.** Apelidos de participantes são aceitáveis (são pseudônimos efêmeros), mas qualquer dado vindo de eventual login (IP em texto claro, email) **nunca** vai a log de info — só em casos de error, com truncamento.
-- **Sem `console.log` no código de produção.** Lints (ESLint `no-console`) garantem.
-- **Wrapper único** em `src/server/logger.ts` exportando uma instância de logger. Outros módulos importam dali — não instanciam Pino direto.
-- **Frontend:** `console.error` é aceitável para erros locais do browser. Não há agregação de logs do cliente no MVP (sem Sentry, sem LogRocket).
+- **Levels** used: `trace` (dev only), `debug` (dev + opt-in in prod), `info` (relevant business events), `warn` (expected-but-abnormal situations — duplicate nickname, room not found), `error` (a failure that escaped the handler — uncaught exception, bug).
+- **Default level in prod:** `info`. In dev: `debug`. Controlled by the `LOG_LEVEL` env var.
+- **Format:** JSON in production (`{level, time, msg, ...context}`), pretty-print (`pino-pretty`) in development — switched by `NODE_ENV`.
+- **Mandatory fields in every business-event log:** `roomId` (when applicable), `event` (event name, e.g. `room.created`, `vote.cast`, `round.revealed`).
+- **No PII in logs.** Participant nicknames are acceptable (they are ephemeral pseudonyms), but any data coming from a hypothetical login (cleartext IP, email) **never** ends up in info logs — only in error cases, truncated.
+- **No `console.log` in production code.** ESLint's `no-console` rule enforces this.
+- **Single wrapper** in `src/server/logger.ts` exporting a logger instance. Other modules import from there — they never instantiate Pino directly.
+- **Frontend:** `console.error` is acceptable for local browser errors. There is no client-log aggregation in the MVP (no Sentry, no LogRocket).
 
-Exemplo:
+Example:
 
 ```ts
 import { logger } from "@/server/logger";
@@ -39,43 +39,43 @@ logger.error({ event: "socket.unhandled", err }, "uncaught socket handler error"
 
 ## Alternatives considered
 
-- **`console.log`/`console.error` cru.**
-  Prós: zero dependência. Contras: sem níveis, sem formato estruturado, agrupamento manual em produção. Princípio 8 fica mal coberto. **Rejeitado.**
+- **Raw `console.log`/`console.error`.**
+  Pros: zero dependency. Cons: no levels, no structured format, manual aggregation in production. Principle 8 is poorly covered. **Rejected.**
 
 - **Winston.**
-  Prós: muito popular. Contras: API mais barroca, performance pior, formatos JSON menos limpos out-of-the-box. Não há ganho sobre Pino para este projeto. **Rejeitado.**
+  Pros: very popular. Cons: more baroque API, worse performance, less clean JSON formats out of the box. No gain over Pino for this project. **Rejected.**
 
 - **Bunyan.**
-  Prós: também estruturado, JSON nativo. Contras: manutenção menos ativa que Pino nos últimos anos. **Rejeitado.**
+  Pros: also structured, JSON-native. Cons: less actively maintained than Pino in recent years. **Rejected.**
 
-- **OpenTelemetry desde o dia 1.**
-  Prós: padrão de observabilidade moderno. Contras: peso desproporcional para um MVP single-process sem requisito atual de tracing distribuído. **Adiado** — pode ser sobreposto a Pino quando necessário (via instrumentação automática).
+- **OpenTelemetry from day 1.**
+  Pros: modern observability standard. Cons: disproportionate weight for a single-process MVP with no current distributed tracing requirement. **Deferred** — can be layered on top of Pino when needed (via auto-instrumentation).
 
 ## Consequences
 
 ### Positive
-- Logs JSON são parseáveis por qualquer agregador (ELK, Loki, CloudWatch, etc.) sem regex.
-- Pino é rápido — quase nenhum overhead no hot path do WebSocket.
-- Um único wrapper centralizado evita variações de estilo entre módulos.
-- Regra "sem PII em info" reduz risco de incidente de privacidade desde o início.
+- JSON logs are parseable by any aggregator (ELK, Loki, CloudWatch, etc.) without regex.
+- Pino is fast — almost no overhead in the WebSocket hot path.
+- A single centralized wrapper avoids stylistic drift between modules.
+- The "no PII at info" rule reduces privacy-incident risk from day one.
 
 ### Negative (accepted costs)
-- Em dev, JSON sem `pino-pretty` é ilegível. Aceita-se a dependência dev de `pino-pretty`.
-- `no-console` no ESLint pode pegar `console.log` legítimos em scripts de migração / debug rápido — vamos liberar via `// eslint-disable-next-line` pontual quando justificado.
-- Frontend sem agregação significa que erros de browser ficam invisíveis para o time. Aceita no MVP; revisitar quando houver usuários reais.
+- In dev, JSON without `pino-pretty` is illegible. We accept the dev dependency on `pino-pretty`.
+- `no-console` in ESLint can flag legitimate `console.log` in migration / quick-debug scripts — we will whitelist with `// eslint-disable-next-line` ad hoc when justified.
+- Frontend without aggregation means browser errors stay invisible to the team. Accepted in the MVP; revisit when real users land.
 
 ### Neutral
-- A convenção `event: 'noun.verb'` é leve mas exige disciplina nos PRs — o `code-reviewer` skill deve verificar.
+- The convention `event: 'noun.verb'` is lightweight but requires discipline in PRs — the `code-reviewer` skill should check it.
 
 ## Constitution adherence
 
-- **Princípio 8 (falha visível):** logger estruturado + regra explícita de não-silenciamento + `no-console` no lint cobrem o princípio.
-- **Princípio 6 (sem segredos):** a regra "sem PII em info" mais o checklist de revisão protegem contra vazamento via log.
-- **Princípio 5 (ADR para decisões):** esta ADR registra a convenção. ✓
+- **Principle 8 (fail visibly):** a structured logger + the explicit no-silencing rule + `no-console` in lint cover the principle.
+- **Principle 6 (no secrets):** the "no PII at info" rule plus the review checklist guard against leaking via logs.
+- **Principle 5 (ADR for decisions):** this ADR records the convention. ✓
 
 ## Future review
 
-Revisitar quando:
-- Houver mais de uma réplica em produção (precisaremos correlation IDs, talvez tracing).
-- Houver requisito de retenção/auditoria com prazo (LGPD, ISO) — pode mudar o que pode ou não ir a log.
-- Aparecer pedido para agregar logs de frontend (Sentry ou similar) — nova ADR específica.
+Revisit when:
+- More than one replica lands in production (we will need correlation IDs, perhaps tracing).
+- A retention/audit requirement with a fixed term appears (LGPD, ISO) — it may change what can or cannot reach the logs.
+- A request to aggregate frontend logs (Sentry or similar) shows up — a new dedicated ADR.

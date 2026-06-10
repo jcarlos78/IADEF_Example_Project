@@ -46,10 +46,10 @@ export interface CreateRoomOpts {
 export function createRoom(opts: CreateRoomOpts): RoomState {
   const nickname = opts.hostNickname.trim();
   if (!nickname) {
-    throw new Error("hostNickname é obrigatório");
+    throw new Error("hostNickname is required");
   }
   if (!isScaleId(opts.scaleId)) {
-    throw new Error(`scaleId inválido: ${opts.scaleId}`);
+    throw new Error(`invalid scaleId: ${opts.scaleId}`);
   }
   return {
     roomId: opts.roomId,
@@ -76,11 +76,11 @@ export function joinRoom(
 ): Outcome {
   const nickname = opts.nickname.trim();
   if (!nickname) {
-    return err("nickname-empty", "Apelido é obrigatório.");
+    return err("nickname-empty", "Nickname is required.");
   }
   for (const p of Object.values(state.participants)) {
     if (p.nickname === nickname && p.sessionId !== opts.sessionId) {
-      return err("nickname-duplicate", `Apelido "${nickname}" já está em uso nesta sala.`);
+      return err("nickname-duplicate", `Nickname "${nickname}" is already in use in this room.`);
     }
   }
   const existing = state.participants[opts.sessionId];
@@ -105,7 +105,7 @@ export function joinRoom(
 
 export function leaveRoom(state: RoomState, opts: { sessionId: string; now: number }): Outcome {
   if (!state.participants[opts.sessionId]) {
-    return err("session-unknown", "Sessão não pertence à sala.");
+    return err("session-unknown", "Session does not belong to this room.");
   }
   const remainingParticipants = Object.fromEntries(
     Object.entries(state.participants).filter(([k]) => k !== opts.sessionId),
@@ -133,7 +133,7 @@ export function markDisconnected(
 ): Outcome {
   const p = state.participants[opts.sessionId];
   if (!p) {
-    return err("session-unknown", "Sessão não pertence à sala.");
+    return err("session-unknown", "Session does not belong to this room.");
   }
   return {
     ok: true,
@@ -152,10 +152,10 @@ export function startRound(
   opts: { sessionId: string; title?: string; now: number },
 ): Outcome {
   if (state.hostSessionId !== opts.sessionId) {
-    return err("not-host", "Apenas o facilitador pode iniciar uma rodada.");
+    return err("not-host", "Only the facilitator can start a round.");
   }
   if (state.round && !state.round.revealed) {
-    return err("round-in-progress", "Já existe uma rodada em andamento.");
+    return err("round-in-progress", "A round is already in progress.");
   }
   const title = opts.title?.trim() || null;
   return {
@@ -179,17 +179,17 @@ export function castVote(
   opts: { sessionId: string; card: string; now: number },
 ): Outcome {
   if (!state.round) {
-    return err("no-round", "Não há rodada em andamento.");
+    return err("no-round", "No round is in progress.");
   }
   if (state.round.revealed) {
-    return err("round-already-revealed", "Rodada já foi revelada.");
+    return err("round-already-revealed", "The round has already been revealed.");
   }
   if (!state.participants[opts.sessionId]) {
-    return err("session-unknown", "Sessão não pertence à sala.");
+    return err("session-unknown", "Session does not belong to this room.");
   }
   const scale = getScale(state.scaleId);
   if (!scale.cards.includes(opts.card)) {
-    return err("card-invalid", `Carta "${opts.card}" não pertence à escala ${scale.label}.`);
+    return err("card-invalid", `Card "${opts.card}" does not belong to scale ${scale.label}.`);
   }
   return {
     ok: true,
@@ -206,13 +206,13 @@ export function castVote(
 
 export function revealRound(state: RoomState, opts: { sessionId: string; now: number }): Outcome {
   if (state.hostSessionId !== opts.sessionId) {
-    return err("not-host", "Apenas o facilitador pode revelar.");
+    return err("not-host", "Only the facilitator can reveal.");
   }
   if (!state.round) {
-    return err("no-round", "Não há rodada para revelar.");
+    return err("no-round", "There is no round to reveal.");
   }
   if (state.round.revealed) {
-    return err("round-already-revealed", "Rodada já foi revelada.");
+    return err("round-already-revealed", "The round has already been revealed.");
   }
   const stats = summarize(Object.values(state.round.votes));
   const result: RoundResult = {
@@ -234,7 +234,7 @@ export function revealRound(state: RoomState, opts: { sessionId: string; now: nu
 
 export function resetRound(state: RoomState, opts: { sessionId: string; now: number }): Outcome {
   if (state.hostSessionId !== opts.sessionId) {
-    return err("not-host", "Apenas o facilitador pode iniciar nova rodada.");
+    return err("not-host", "Only the facilitator can start a new round.");
   }
   return {
     ok: true,
@@ -247,13 +247,13 @@ export function changeScale(
   opts: { sessionId: string; scaleId: string; now: number },
 ): Outcome {
   if (state.hostSessionId !== opts.sessionId) {
-    return err("not-host", "Apenas o facilitador pode trocar a escala.");
+    return err("not-host", "Only the facilitator can change the scale.");
   }
   if (state.round && !state.round.revealed) {
-    return err("round-in-progress", "Não é possível trocar a escala durante uma rodada.");
+    return err("round-in-progress", "Cannot change the scale while a round is in progress.");
   }
   if (!isScaleId(opts.scaleId)) {
-    return err("scale-invalid", `Escala "${opts.scaleId}" não existe.`);
+    return err("scale-invalid", `Scale "${opts.scaleId}" does not exist.`);
   }
   return {
     ok: true,

@@ -136,8 +136,8 @@ export function RoomClient({ roomId, initialSessionId, initialNickname }: RoomCl
         code: payload.reason === "ttl" ? "room-not-found" : "internal",
         message:
           payload.reason === "ttl"
-            ? "Sala expirou por inatividade."
-            : "Sala foi fechada pelo servidor.",
+            ? "Room expired due to inactivity."
+            : "Room was closed by the server.",
       });
     });
     socket.on("connect", () => {
@@ -161,8 +161,8 @@ export function RoomClient({ roomId, initialSessionId, initialNickname }: RoomCl
       <RoomErrorView
         title={
           terminalError.code === "room-not-found"
-            ? "Sala não encontrada ou expirada"
-            : "Erro na sala"
+            ? "Room not found or expired"
+            : "Room error"
         }
         description={terminalError.message}
       />
@@ -179,8 +179,8 @@ export function RoomClient({ roomId, initialSessionId, initialNickname }: RoomCl
           }}
           isSubmitting={isJoining}
           errorMessage={joinError?.message ?? null}
-          title="Entrar na sala"
-          description={`Sala ${roomId} — escolha um apelido para participar.`}
+          title="Join the room"
+          description={`Room ${roomId} — pick a nickname to join.`}
         />
       </main>
     );
@@ -221,16 +221,16 @@ export function RoomClient({ roomId, initialSessionId, initialNickname }: RoomCl
         <div className={styles.headerInner}>
           <h1 className={styles.roomTitle}>
             <span aria-hidden="true" className={styles.dot} />
-            Sala {state.roomId}
+            Room {state.roomId}
           </h1>
           <p className={styles.roomMeta}>
             <span className={styles.metaChip}>
-              Escala: <strong>{state.scaleId}</strong>
+              Scale: <strong>{state.scaleId}</strong>
             </span>
             <span className={styles.metaChip}>
-              {participantCount} participante{participantCount === 1 ? "" : "s"}
+              {participantCount} participant{participantCount === 1 ? "" : "s"}
             </span>
-            {isHost ? <span className={styles.hostBadge}>você é o facilitador</span> : null}
+            {isHost ? <span className={styles.hostBadge}>you are the facilitator</span> : null}
           </p>
         </div>
       </header>
@@ -246,8 +246,8 @@ export function RoomClient({ roomId, initialSessionId, initialNickname }: RoomCl
                 className={hasActiveRound ? styles.voteTitle : styles.voteIdle}
               >
                 {hasActiveRound
-                  ? `Votando${state.round?.title ? ` em ${state.round.title}` : ""}`
-                  : "Aguardando início da rodada"}
+                  ? `Voting${state.round?.title ? ` on ${state.round.title}` : ""}`
+                  : "Waiting for the round to start"}
               </h2>
               <div className={styles.cardArea}>
                 <CardPicker
@@ -276,7 +276,7 @@ export function RoomClient({ roomId, initialSessionId, initialNickname }: RoomCl
         <aside className={styles.sidebar}>
           <section aria-labelledby="participants-heading" className={styles.panel}>
             <h2 id="participants-heading" className={styles.panelHeading}>
-              Participantes
+              Participants
             </h2>
             <ParticipantList participants={state.participants} hasActiveRound={hasActiveRound} />
           </section>

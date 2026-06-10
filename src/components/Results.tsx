@@ -18,24 +18,24 @@ export function Results({ result, participants }: ResultsProps) {
   return (
     <section aria-labelledby="results-heading" className={styles.panel}>
       <h2 id="results-heading" className={styles.heading}>
-        Resultado
+        Result
       </h2>
 
-      <dl aria-label="Estatísticas" className={styles.stats}>
+      <dl aria-label="Statistics" className={styles.stats}>
         <div className={styles.stat}>
-          <dt className={styles.statLabel}>Média</dt>
+          <dt className={styles.statLabel}>Mean</dt>
           <dd className={styles.statValue} data-stat="average">
             {fmt(result.average)}
           </dd>
         </div>
         <div className={styles.stat}>
-          <dt className={styles.statLabel}>Mínimo</dt>
+          <dt className={styles.statLabel}>Minimum</dt>
           <dd className={styles.statValue} data-stat="min">
             {fmt(result.min)}
           </dd>
         </div>
         <div className={styles.stat}>
-          <dt className={styles.statLabel}>Máximo</dt>
+          <dt className={styles.statLabel}>Maximum</dt>
           <dd className={styles.statValue} data-stat="max">
             {fmt(result.max)}
           </dd>
@@ -43,8 +43,8 @@ export function Results({ result, participants }: ResultsProps) {
       </dl>
 
       <div className={styles.section}>
-        <h3 className={styles.subheading}>Votos</h3>
-        <ul aria-label="Votos por participante" className={styles.votes}>
+        <h3 className={styles.subheading}>Votes</h3>
+        <ul aria-label="Votes per participant" className={styles.votes}>
           {participants.map((p) => {
             const vote = result.votesBySession[p.sessionId];
             return (
@@ -62,8 +62,8 @@ export function Results({ result, participants }: ResultsProps) {
 
       {distribution.length > 0 ? (
         <div className={styles.section}>
-          <h3 className={styles.subheading}>Distribuição</h3>
-          <ul aria-label="Distribuição de votos" className={styles.distribution}>
+          <h3 className={styles.subheading}>Distribution</h3>
+          <ul aria-label="Vote distribution" className={styles.distribution}>
             {distribution.map(([card, count]) => {
               const pct = maxCount > 0 ? (count / maxCount) * 100 : 0;
               return (

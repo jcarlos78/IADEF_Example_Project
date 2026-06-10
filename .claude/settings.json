@@ -1,6 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
-  "model": "claude-opus-4-7",
+  "env": {},
   "permissions": {
     "allow": [
       "Bash(git status:*)",
@@ -14,7 +14,24 @@
       "Read",
       "Edit",
       "Write",
-      "Grep"
+      "Grep",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(npm run *)",
+      "Bash(npm test *)",
+      "Bash(npx eslint *)",
+      "Bash(npm install *)",
+      "Bash(NODE_ENV=production LOG_LEVEL=info node -e ' *)",
+      "Bash(NODE_ENV=development LOG_LEVEL=debug node -e ' *)",
+      "Bash(curl -sS -o /tmp/pp-home.html -w \"HTTP %{http_code} %{size_download}B\\\\n\" http://localhost:3000)",
+      "Bash(curl -sS -w \"\\\\nHTTP %{http_code}\\\\n\" \"http://localhost:3000/socket.io/?EIO=4&transport=polling\")",
+      "Bash(curl -sS -i -X POST http://localhost:3000/api/rooms -H \"Content-Type: application/json\" -d '{\"scaleId\":\"fibonacci\",\"hostNickname\":\"Maria\"}')",
+      "Bash(npx playwright *)",
+      "Bash(npx prettier *)",
+      "WebFetch(domain:kiarahdesign.myportfolio.com)",
+      "Bash(echo \"started pid=$!\")",
+      "Bash(lsof -ti:3000)",
+      "Bash(xargs -r kill)"
     ],
     "deny": [
       "Bash(git push --force:*)",
@@ -22,5 +39,5 @@
       "Bash(rm -rf /:*)"
     ]
   },
-  "env": {}
+  "model": "claude-opus-4-7"
 }

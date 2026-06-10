@@ -1,20 +1,20 @@
 # Plan: Planning Poker
 
-> **Prerequisite:** `spec.md` aprovado em 2026-06-09.
+> **Prerequisite:** `spec.md` approved on 2026-06-09.
 
 ## Architectural decisions
 
-Cada decisão abaixo tem implicação de longo prazo e gera ADR.
+Each decision below has long-term implications and gets its own ADR.
 
-- **D1 — Stack: Node.js + Next.js (App Router) + socket.io para WebSocket.** [ADR 0001 — required]
-- **D2 — Estratégia de logging: Pino estruturado, níveis info/warn/error, sem PII.** [ADR 0002 — required, referenciado pelo CLAUDE.md]
-- **D3 — Estado das salas in-memory num único processo Node.** Sem Redis, sem cluster. Documentado dentro de ADR 0001 como consequência negativa aceita do MVP single-replica.
-- **D4 — Identidade do facilitador via token de sessão (HttpOnly cookie ou token em memória do cliente devolvido na criação da sala),** não pelo apelido. Detalhe técnico, sem ADR próprio — pertence à seção "modelo de sala" abaixo.
-- **D5 — Front e back no mesmo projeto Next.js (custom server), TypeScript em tudo.** Decorre de D1 — sem ADR adicional.
+- **D1 — Stack: Node.js + Next.js (App Router) + socket.io for WebSocket.** [ADR 0001 — required]
+- **D2 — Logging strategy: structured Pino, levels info/warn/error, no PII.** [ADR 0002 — required, referenced by CLAUDE.md]
+- **D3 — Room state in-memory in a single Node process.** No Redis, no cluster. Documented inside ADR 0001 as an accepted negative consequence of the single-replica MVP.
+- **D4 — Facilitator identity via session token (HttpOnly cookie or in-memory client token returned at room creation),** not by nickname. Technical detail, no dedicated ADR — belongs in the "room model" section below.
+- **D5 — Frontend and backend in the same Next.js project (custom server), TypeScript everywhere.** Follows from D1 — no extra ADR.
 
 ## Affected components
 
-Layout de implementação proposto (sem código ainda; nomes definitivos podem mudar nos tasks):
+Proposed implementation layout (no code yet; final names may shift in the tasks):
 
 ```
 src/
@@ -22,90 +22,90 @@ src/
 │   ├── index.ts                custom HTTP server (Next + Socket.IO)
 │   ├── rooms/
 │   │   ├── store.ts            in-memory Map<roomId, RoomState> + TTL cleanup
-│   │   ├── room.ts             RoomState, transições (start round, vote, reveal, reset)
-│   │   └── room.test.ts        unit tests da máquina de estado
+│   │   ├── room.ts             RoomState, transitions (start round, vote, reveal, reset)
+│   │   └── room.test.ts        unit tests for the state machine
 │   ├── socket/
-│   │   ├── handlers.ts         eventos socket.io ↔ store
-│   │   └── handlers.test.ts    testes de protocolo (com socket.io-client em memória)
-│   └── logger.ts               wrapper Pino (config conforme ADR 0002)
+│   │   ├── handlers.ts         socket.io events ↔ store
+│   │   └── handlers.test.ts    protocol tests (with in-memory socket.io-client)
+│   └── logger.ts               Pino wrapper (config per ADR 0002)
 ├── lib/
-│   ├── scales.ts               escalas Fibonacci / Fibonacci-mod / T-shirt
-│   ├── stats.ts                média/min/max ignorando ?, ☕
-│   ├── events.ts               tipos compartilhados client ↔ server
-│   └── stats.test.ts           unit tests do agregador
+│   ├── scales.ts               Fibonacci / Fibonacci-mod / T-shirt scales
+│   ├── stats.ts                mean/min/max ignoring ?, ☕
+│   ├── events.ts               shared client ↔ server types
+│   └── stats.test.ts           unit tests for the aggregator
 ├── app/
-│   ├── page.tsx                home: criar sala (escolher escala) → redireciona p/ /room/[id]
-│   ├── room/[id]/page.tsx      tela da sala (Server Component que monta o client)
-│   └── room/[id]/RoomClient.tsx Client Component que conecta no socket
+│   ├── page.tsx                home: create a room (pick a scale) → redirect to /room/[id]
+│   ├── room/[id]/page.tsx      room screen (Server Component that mounts the client)
+│   └── room/[id]/RoomClient.tsx Client Component that connects to the socket
 ├── components/
 │   ├── NicknameDialog.tsx
 │   ├── CardPicker.tsx
 │   ├── ParticipantList.tsx
-│   ├── RoundControls.tsx       (visível só para o facilitador)
+│   ├── RoundControls.tsx       (visible only to the facilitator)
 │   └── Results.tsx
-└── styles/                     CSS modules ou Tailwind (decidido no task de setup)
+└── styles/                     CSS modules or Tailwind (decided in the setup task)
 
 tests/
-├── e2e/                        Playwright (multi-browser) — fluxos críticos
+├── e2e/                        Playwright (multi-browser) — critical flows
 │   ├── create-and-join.spec.ts          AC1, AC2, AC8, AC11
 │   ├── vote-and-reveal.spec.ts          AC3, AC4, AC5, AC6
 │   ├── facilitator-handoff.spec.ts      AC10
 │   └── scale-switch.spec.ts             AC7
-└── unit/                       (espelha src/, rodado por Vitest)
+└── unit/                       (mirrors src/, run by Vitest)
 
 docs/adr/
 ├── 0001-stack-choice.md        Next.js + Socket.IO
 └── 0002-logging-strategy.md    Pino
 
 package.json, tsconfig.json, next.config.ts, vitest.config.ts, playwright.config.ts,
-.env.example, .gitignore (ajustes para node_modules, .next, etc.)
+.env.example, .gitignore (adjustments for node_modules, .next, etc.)
 ```
 
-Nada disso existe ainda — `src/` e `tests/` só têm `README.md` e `.gitkeep`. O primeiro task será **setup de projeto**.
+None of this exists yet — `src/` and `tests/` have only `README.md` and `.gitkeep`. The first task will be **project setup**.
 
 ## Implementation sequence
 
-Cada item vira um task atômico em `tasks.md`. Ordem proposta — design para ser interrompível e revisável a cada PR/commit.
+Each item becomes an atomic task in `tasks.md`. Proposed order — designed to be interruptible and reviewable at every PR/commit.
 
-1. **Setup do projeto Next.js + TypeScript + tooling** (lint, format, vitest, playwright). Sem feature ainda — só andaime.
-2. **ADRs 0001 e 0002 commitadas** se ainda não estiverem. (Provavelmente entram junto com o plan, antes de qualquer código.)
-3. **Tipos compartilhados e escalas** em `src/lib/` (scales, events, stats) + **testes unitários de `stats`** (AC5 — média/min/max). Sem WebSocket ainda.
-4. **Modelo de sala (state machine)** em `src/server/rooms/` com testes unitários cobrindo: criar sala, entrar com apelido válido/duplicado/vazio, iniciar rodada, votar, revelar, reset, trocar escala entre rodadas, transferência de facilitador. (AC1, AC3, AC6, AC7, AC8, AC10).
-5. **Custom server + integração socket.io** com handlers de eventos mapeando para o modelo. Inclui TTL cleanup para AC9 (sala efêmera). Testes de protocolo com socket.io-client.
-6. **UI da home** — formulário "criar sala" + escolha de escala (AC1).
-7. **UI da sala** — entrada de apelido (AC2, AC8), lista de participantes (AC12), card picker (AC3), controles do facilitador (AC4, AC6, AC7), resultados (AC5).
-8. **Tratamento de erros de cliente** — sala inexistente/expirada (AC11), desconexão, reconexão simples.
-9. **Testes E2E Playwright** cobrindo os ACs com 2+ navegadores simultâneos.
-10. **Polimento + docs** — README com instruções de dev/start, `.env.example`, screenshot opcional.
+1. **Next.js + TypeScript project setup + tooling** (lint, format, vitest, playwright). No feature yet — only scaffolding.
+2. **ADRs 0001 and 0002 committed** if not already. (They likely land alongside the plan, before any code.)
+3. **Shared types and scales** in `src/lib/` (scales, events, stats) + **unit tests for `stats`** (AC5 — mean/min/max). No WebSocket yet.
+4. **Room model (state machine)** in `src/server/rooms/` with unit tests covering: create a room, join with a valid/duplicate/empty nickname, start a round, vote, reveal, reset, switch the scale between rounds, facilitator handoff. (AC1, AC3, AC6, AC7, AC8, AC10).
+5. **Custom server + socket.io integration** with event handlers mapping to the model. Includes TTL cleanup for AC9 (ephemeral room). Protocol tests with socket.io-client.
+6. **Home UI** — "create a room" form + scale picker (AC1).
+7. **Room UI** — nickname entry (AC2, AC8), participant list (AC12), card picker (AC3), facilitator controls (AC4, AC6, AC7), results (AC5).
+8. **Client-side error handling** — non-existent/expired room (AC11), disconnect, simple reconnect.
+9. **Playwright E2E tests** covering the ACs with 2+ simultaneous browsers.
+10. **Polish + docs** — README with dev/start instructions, `.env.example`, optional screenshot.
 
-Cada passo é um commit (ou par commit "código + teste") — sem misturar feature com refactor.
+Each step is a commit (or a "code + test" pair commit) — never mixing feature with refactor.
 
 ## Testing strategy
 
-- **Unit tests (Vitest)** — `src/lib/stats.ts`, `src/lib/scales.ts`, e principalmente a máquina de estado `src/server/rooms/room.ts`. Devem ser determinísticos e rápidos (< 1s no total).
-- **Protocol tests (Vitest + socket.io-client)** — sobem um socket.io server in-process, simulam N clientes, validam que eventos batem com o modelo. Cobre as transições críticas (revelar entrega para todos, voto não vaza antes de revelar).
-- **E2E (Playwright)** — abre 2–3 contextos de browser apontando para a mesma sala e verifica os fluxos de tempo real. Roda contra o servidor real (`next dev` ou build de produção). Cobre os ACs que envolvem percepção temporal (AC4 com timeout < 1s).
-- **Manual smoke** antes de declarar pronto: rodar localmente, abrir 3 abas em browsers diferentes, jogar uma rodada de cabo a rabo. Validação humana exigida por HIC.
+- **Unit tests (Vitest)** — `src/lib/stats.ts`, `src/lib/scales.ts`, and primarily the state machine `src/server/rooms/room.ts`. Must be deterministic and fast (< 1s total).
+- **Protocol tests (Vitest + socket.io-client)** — spin up a socket.io server in-process, simulate N clients, validate that events match the model. Cover critical transitions (reveal reaches everyone, vote does not leak before reveal).
+- **E2E (Playwright)** — open 2–3 browser contexts pointing at the same room and validate the real-time flows. Runs against the real server (`next dev` or production build). Covers ACs involving time perception (AC4 with timeout < 1s).
+- **Manual smoke** before declaring done: run locally, open 3 tabs in different browsers, play a round end-to-end. Human validation required by HIC.
 
-Coverage não é meta numérica — cada AC do spec precisa ter pelo menos um teste mapeado (rastreabilidade `AC# → teste`), e isso será verificado no fim via uma tabela no README ou em comentário do PR final.
+Coverage is not a numeric target — each AC in the spec needs at least one mapped test (traceability `AC# → test`), which will be verified at the end via a table in the README or in the final PR comment.
 
 ## Implementation risks
 
-Riscos **técnicos** (riscos de produto ficaram no spec):
+**Technical** risks (product risks stayed in the spec):
 
-- **R1 — Custom server Next.js + Socket.IO tem fricção com hot reload e com deploy em Vercel.** Mitigação: documentar que o deploy é em VM/container (não serverless), e isolar o entry point do servidor para que `next dev` funcione separadamente quando possível.
-- **R2 — TTL cleanup de salas (AC9) pode vazar timers ou descartar salas com participante "zumbi".** Mitigação: usar timestamps em vez de `setTimeout` por sala — um único interval varre o Map. Testar com mock de tempo.
-- **R3 — Reconexão de cliente após queda de rede curta pode duplicar participante ou perder a identidade de facilitador.** Mitigação: sessionId em cookie/localStorage; ao reconectar, reanexar à sala usando sessionId; teste E2E específico para reconexão.
-- **R4 — Race na transferência de facilitador (AC10): se vários participantes detectam ausência ao mesmo tempo, todos podem tentar assumir.** Mitigação: só o servidor decide; cliente nunca propõe sucessão. Estado é central, não distribuído.
-- **R5 — Playwright multi-browser flaky em CI.** Mitigação: usar `expect.poll` para assertions de tempo real, evitar `sleep`; rodar localmente primeiro.
+- **R1 — Next.js custom server + Socket.IO has friction with hot reload and with Vercel deployment.** Mitigation: document that deployment is on a VM/container (not serverless), and isolate the server entry point so `next dev` can run separately when possible.
+- **R2 — Room TTL cleanup (AC9) may leak timers or discard rooms with a "zombie" participant.** Mitigation: use timestamps instead of `setTimeout` per room — a single interval sweeps the Map. Test with fake timers.
+- **R3 — Client reconnection after a short network drop may duplicate a participant or lose the facilitator identity.** Mitigation: sessionId in cookie/localStorage; on reconnect, re-attach to the room using sessionId; dedicated E2E test for reconnection.
+- **R4 — Race in facilitator handoff (AC10): if several participants detect the absence at the same time, they could all try to take over.** Mitigation: the server decides exclusively; the client never proposes succession. State is centralized, not distributed.
+- **R5 — Multi-browser Playwright flaky in CI.** Mitigation: use `expect.poll` for real-time assertions, avoid `sleep`; run locally first.
 
 ## Definition of Done
 
-- [ ] Todos os testes derivados do spec passam (unit + protocol + E2E).
-- [ ] Cada AC tem pelo menos um teste mapeado.
-- [ ] Code review aprovado (skill `code-reviewer` + revisão humana).
-- [ ] ADRs 0001 e 0002 commitadas e referenciadas no README.
-- [ ] README do projeto atualizado com como rodar (`npm run dev`, `npm test`, `npm run e2e`).
-- [ ] `.env.example` presente; nenhum segredo no diff.
-- [ ] Smoke manual: 3 abas, rodada completa, sem erro em console nem warning de React.
-- [ ] Princípios da constituição respeitados (spec antes, testes pareados, ADRs, atômico, sem segredos, falhas visíveis).
+- [ ] Every test derived from the spec passes (unit + protocol + E2E).
+- [ ] Every AC has at least one mapped test.
+- [ ] Code review approved (`code-reviewer` skill + human review).
+- [ ] ADRs 0001 and 0002 committed and referenced in the README.
+- [ ] Project README updated with how to run (`npm run dev`, `npm test`, `npm run e2e`).
+- [ ] `.env.example` present; no secrets in the diff.
+- [ ] Manual smoke: 3 tabs, full round, no console errors or React warnings.
+- [ ] Constitution principles respected (spec first, paired tests, ADRs, atomic, no secrets, fail visibly).

@@ -7,12 +7,12 @@ function makeRoom(roomId: string, now: number): RoomState {
     roomId,
     scaleId: "fibonacci",
     hostSessionId: `${roomId}-host`,
-    hostNickname: "Anfitriã",
+    hostNickname: "Host",
     now,
   });
 }
 
-describe("RoomStore — CRUD básico", () => {
+describe("RoomStore — basic CRUD", () => {
   it("create + get round-trip", () => {
     const store = new RoomStore();
     const room = makeRoom("r1", 1_000);
@@ -22,19 +22,19 @@ describe("RoomStore — CRUD básico", () => {
     expect(store.size()).toBe(1);
   });
 
-  it("create lança ao tentar duplicar roomId", () => {
+  it("create throws on duplicate roomId", () => {
     const store = new RoomStore();
     store.create(makeRoom("r1", 1_000));
-    expect(() => store.create(makeRoom("r1", 2_000))).toThrow(/já existe/);
+    expect(() => store.create(makeRoom("r1", 2_000))).toThrow(/already exists/);
   });
 
-  it("get retorna undefined para sala inexistente (AC11 — caminho de erro)", () => {
+  it("get returns undefined for a missing room (AC11 — error path)", () => {
     const store = new RoomStore();
-    expect(store.get("inexistente")).toBeUndefined();
-    expect(store.has("inexistente")).toBe(false);
+    expect(store.get("missing")).toBeUndefined();
+    expect(store.has("missing")).toBe(false);
   });
 
-  it("update substitui o estado salvo", () => {
+  it("update replaces the stored state", () => {
     const store = new RoomStore();
     const room = makeRoom("r1", 1_000);
     store.create(room);
@@ -45,12 +45,12 @@ describe("RoomStore — CRUD básico", () => {
     expect(store.get("r1")?.lastActivityAt).toBe(2_000);
   });
 
-  it("update lança para sala inexistente", () => {
+  it("update throws for a missing room", () => {
     const store = new RoomStore();
-    expect(() => store.update(makeRoom("ghost", 1_000))).toThrow(/não existe/);
+    expect(() => store.update(makeRoom("ghost", 1_000))).toThrow(/does not exist/);
   });
 
-  it("delete retorna true se removeu, false se não tinha", () => {
+  it("delete returns true if it removed, false if it was absent", () => {
     const store = new RoomStore();
     store.create(makeRoom("r1", 1_000));
     expect(store.delete("r1")).toBe(true);
@@ -58,7 +58,7 @@ describe("RoomStore — CRUD básico", () => {
     expect(store.size()).toBe(0);
   });
 
-  it("ids() lista todas as salas presentes", () => {
+  it("ids() lists every present room", () => {
     const store = new RoomStore();
     store.create(makeRoom("r1", 1_000));
     store.create(makeRoom("r2", 1_000));
@@ -66,8 +66,8 @@ describe("RoomStore — CRUD básico", () => {
   });
 });
 
-describe("RoomStore.cleanupStale — AC9 (sala efêmera após TTL)", () => {
-  it("remove sala cujo lastActivityAt é mais antigo que o TTL", () => {
+describe("RoomStore.cleanupStale — AC9 (ephemeral room after TTL)", () => {
+  it("removes a room whose lastActivityAt is older than the TTL", () => {
     const store = new RoomStore();
     store.create(makeRoom("stale", 1_000));
     const now = 1_000 + ROOM_TTL_MS + 1;
@@ -76,7 +76,7 @@ describe("RoomStore.cleanupStale — AC9 (sala efêmera após TTL)", () => {
     expect(store.has("stale")).toBe(false);
   });
 
-  it("preserva sala dentro do TTL", () => {
+  it("keeps a room within the TTL", () => {
     const store = new RoomStore();
     store.create(makeRoom("fresh", 1_000));
     const now = 1_000 + ROOM_TTL_MS - 1;
@@ -84,7 +84,7 @@ describe("RoomStore.cleanupStale — AC9 (sala efêmera após TTL)", () => {
     expect(store.has("fresh")).toBe(true);
   });
 
-  it("limite exato (now - lastActivityAt === ttl) NÃO remove (regra: 'mais que ttl')", () => {
+  it("exact boundary (now - lastActivityAt === ttl) does NOT remove (rule: 'more than ttl')", () => {
     const store = new RoomStore();
     store.create(makeRoom("borderline", 1_000));
     const now = 1_000 + ROOM_TTL_MS;
@@ -92,7 +92,7 @@ describe("RoomStore.cleanupStale — AC9 (sala efêmera após TTL)", () => {
     expect(store.has("borderline")).toBe(true);
   });
 
-  it("varre múltiplas salas: remove apenas as stale", () => {
+  it("sweeps multiple rooms: removes only the stale ones", () => {
     const store = new RoomStore();
     store.create(makeRoom("old1", 1_000));
     store.create(makeRoom("old2", 2_000));
@@ -103,7 +103,7 @@ describe("RoomStore.cleanupStale — AC9 (sala efêmera após TTL)", () => {
     expect(store.size()).toBe(1);
   });
 
-  it("atividade renovada (via update) impede limpeza", () => {
+  it("renewed activity (via update) prevents cleanup", () => {
     const store = new RoomStore();
     const room = makeRoom("active", 1_000);
     store.create(room);
@@ -124,14 +124,14 @@ describe("RoomStore.cleanupStale — AC9 (sala efêmera após TTL)", () => {
     expect(store.has("active")).toBe(true);
   });
 
-  it("cleanup sem salas é no-op", () => {
+  it("cleanup with no rooms is a no-op", () => {
     const store = new RoomStore();
     expect(store.cleanupStale({ ttlMs: ROOM_TTL_MS, now: 999_999 })).toEqual([]);
   });
 });
 
 describe("ROOM_TTL_MS", () => {
-  it("é 10 minutos conforme AC9", () => {
+  it("is 10 minutes per AC9", () => {
     expect(ROOM_TTL_MS).toBe(600_000);
   });
 });

@@ -32,7 +32,7 @@ function revealedRound(over: Partial<RoundState> = {}): RoundState {
 }
 
 describe("RoundControls — AC4, AC6, AC7", () => {
-  it("sem rodada: oferece iniciar rodada e seletor de escala habilitado", () => {
+  it("no round: offers Start round and the scale select is enabled", () => {
     const props = {
       scaleId: "fibonacci" as const,
       round: null,
@@ -42,11 +42,11 @@ describe("RoundControls — AC4, AC6, AC7", () => {
       onChangeScale: vi.fn(),
     };
     render(<RoundControls {...props} />);
-    expect(screen.getByRole("button", { name: /iniciar rodada/i })).toBeInTheDocument();
-    expect(screen.getByLabelText(/escala/i)).not.toBeDisabled();
+    expect(screen.getByRole("button", { name: /start round/i })).toBeInTheDocument();
+    expect(screen.getByLabelText(/scale/i)).not.toBeDisabled();
   });
 
-  it("iniciar rodada chama onStartRound com título quando preenchido", async () => {
+  it("Start round calls onStartRound with the title when provided", async () => {
     const onStartRound = vi.fn();
     const user = userEvent.setup();
     render(
@@ -59,12 +59,12 @@ describe("RoundControls — AC4, AC6, AC7", () => {
         onChangeScale={vi.fn()}
       />,
     );
-    await user.type(screen.getByLabelText(/título da rodada/i), "  US-42  ");
-    await user.click(screen.getByRole("button", { name: /iniciar rodada/i }));
+    await user.type(screen.getByLabelText(/round title/i), "  US-42  ");
+    await user.click(screen.getByRole("button", { name: /start round/i }));
     expect(onStartRound).toHaveBeenCalledWith("US-42");
   });
 
-  it("iniciar rodada chama onStartRound(undefined) quando título está vazio", async () => {
+  it("Start round calls onStartRound(undefined) when the title is empty", async () => {
     const onStartRound = vi.fn();
     const user = userEvent.setup();
     render(
@@ -77,11 +77,11 @@ describe("RoundControls — AC4, AC6, AC7", () => {
         onChangeScale={vi.fn()}
       />,
     );
-    await user.click(screen.getByRole("button", { name: /iniciar rodada/i }));
+    await user.click(screen.getByRole("button", { name: /start round/i }));
     expect(onStartRound).toHaveBeenCalledWith(undefined);
   });
 
-  it("AC4 — durante rodada: mostra Revelar e desabilita seletor de escala", async () => {
+  it("AC4 — during a round: shows Reveal and disables the scale select", async () => {
     const onReveal = vi.fn();
     const user = userEvent.setup();
     render(
@@ -94,13 +94,13 @@ describe("RoundControls — AC4, AC6, AC7", () => {
         onChangeScale={vi.fn()}
       />,
     );
-    expect(screen.getByText(/em andamento.*login/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/escala/i)).toBeDisabled();
-    await user.click(screen.getByRole("button", { name: /revelar/i }));
+    expect(screen.getByText(/in progress.*login/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/scale/i)).toBeDisabled();
+    await user.click(screen.getByRole("button", { name: /reveal/i }));
     expect(onReveal).toHaveBeenCalled();
   });
 
-  it("AC6 — após reveal: mostra Nova rodada e seletor reabilita", async () => {
+  it("AC6 — after reveal: shows New round and the select re-enables", async () => {
     const onResetRound = vi.fn();
     const user = userEvent.setup();
     render(
@@ -113,13 +113,13 @@ describe("RoundControls — AC4, AC6, AC7", () => {
         onChangeScale={vi.fn()}
       />,
     );
-    expect(screen.getByText(/rodada revelada/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/escala/i)).not.toBeDisabled();
-    await user.click(screen.getByRole("button", { name: /nova rodada/i }));
+    expect(screen.getByText(/round revealed/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/scale/i)).not.toBeDisabled();
+    await user.click(screen.getByRole("button", { name: /new round/i }));
     expect(onResetRound).toHaveBeenCalled();
   });
 
-  it("AC7 — trocar escala chama onChangeScale com novo id", async () => {
+  it("AC7 — switching the scale calls onChangeScale with the new id", async () => {
     const onChangeScale = vi.fn();
     const user = userEvent.setup();
     render(
@@ -132,11 +132,11 @@ describe("RoundControls — AC4, AC6, AC7", () => {
         onChangeScale={onChangeScale}
       />,
     );
-    await user.selectOptions(screen.getByLabelText(/escala/i), "tshirt");
+    await user.selectOptions(screen.getByLabelText(/scale/i), "tshirt");
     expect(onChangeScale).toHaveBeenCalledWith("tshirt");
   });
 
-  it("isSubmitting desabilita todos os botões interativos", () => {
+  it("isSubmitting disables every interactive control", () => {
     render(
       <RoundControls
         scaleId="fibonacci"
@@ -148,7 +148,7 @@ describe("RoundControls — AC4, AC6, AC7", () => {
         isSubmitting
       />,
     );
-    expect(screen.getByRole("button", { name: /iniciar rodada/i })).toBeDisabled();
-    expect(screen.getByLabelText(/escala/i)).toBeDisabled();
+    expect(screen.getByRole("button", { name: /start round/i })).toBeDisabled();
+    expect(screen.getByLabelText(/scale/i)).toBeDisabled();
   });
 });

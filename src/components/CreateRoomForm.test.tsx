@@ -5,66 +5,66 @@ import { describe, expect, it, vi } from "vitest";
 import { CreateRoomForm } from "./CreateRoomForm";
 
 describe("CreateRoomForm — AC1", () => {
-  it("renderiza as 3 escalas com labels em português", () => {
+  it("renders the 3 scales with their labels", () => {
     render(<CreateRoomForm onSubmit={vi.fn()} />);
     expect(screen.getByLabelText("Fibonacci")).toBeInTheDocument();
-    expect(screen.getByLabelText("Fibonacci modificada")).toBeInTheDocument();
+    expect(screen.getByLabelText("Modified Fibonacci")).toBeInTheDocument();
     expect(screen.getByLabelText("T-shirt")).toBeInTheDocument();
   });
 
-  it("Fibonacci é o default selecionado", () => {
+  it("Fibonacci is selected by default", () => {
     render(<CreateRoomForm onSubmit={vi.fn()} />);
     expect(screen.getByLabelText<HTMLInputElement>("Fibonacci").checked).toBe(true);
   });
 
-  it("não chama onSubmit quando apelido está vazio (mostra alert)", async () => {
+  it("does not call onSubmit when nickname is empty (shows alert)", async () => {
     const onSubmit = vi.fn();
     const user = userEvent.setup();
     render(<CreateRoomForm onSubmit={onSubmit} />);
-    await user.click(screen.getByRole("button", { name: /criar sala/i }));
+    await user.click(screen.getByRole("button", { name: /create room/i }));
     expect(onSubmit).not.toHaveBeenCalled();
-    expect(screen.getByRole("alert")).toHaveTextContent(/apelido/i);
+    expect(screen.getByRole("alert")).toHaveTextContent(/nickname/i);
   });
 
-  it("envia { scaleId, hostNickname } ao submeter", async () => {
+  it("sends { scaleId, hostNickname } on submit", async () => {
     const onSubmit = vi.fn();
     const user = userEvent.setup();
     render(<CreateRoomForm onSubmit={onSubmit} />);
-    await user.type(screen.getByLabelText(/apelido/i), "Anfitriã");
+    await user.type(screen.getByLabelText(/nickname/i), "Host");
     await user.click(screen.getByLabelText("T-shirt"));
-    await user.click(screen.getByRole("button", { name: /criar sala/i }));
+    await user.click(screen.getByRole("button", { name: /create room/i }));
     expect(onSubmit).toHaveBeenCalledWith({
       scaleId: "tshirt",
-      hostNickname: "Anfitriã",
+      hostNickname: "Host",
     });
   });
 
-  it("trimma o apelido antes de chamar onSubmit", async () => {
+  it("trims the nickname before calling onSubmit", async () => {
     const onSubmit = vi.fn();
     const user = userEvent.setup();
     render(<CreateRoomForm onSubmit={onSubmit} />);
-    await user.type(screen.getByLabelText(/apelido/i), "  Maria  ");
-    await user.click(screen.getByRole("button", { name: /criar sala/i }));
+    await user.type(screen.getByLabelText(/nickname/i), "  Maria  ");
+    await user.click(screen.getByRole("button", { name: /create room/i }));
     expect(onSubmit).toHaveBeenCalledWith({
       scaleId: "fibonacci",
       hostNickname: "Maria",
     });
   });
 
-  it("desabilita botão durante submit", () => {
+  it("disables the button while submitting", () => {
     render(<CreateRoomForm onSubmit={vi.fn()} isSubmitting />);
-    expect(screen.getByRole("button", { name: /criando/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /creating/i })).toBeDisabled();
   });
 
-  it("exibe errorMessage externa quando não há erro local", () => {
-    render(<CreateRoomForm onSubmit={vi.fn()} errorMessage="Falha de rede" />);
-    expect(screen.getByRole("alert")).toHaveTextContent("Falha de rede");
+  it("shows external errorMessage when there is no local error", () => {
+    render(<CreateRoomForm onSubmit={vi.fn()} errorMessage="Network failure" />);
+    expect(screen.getByRole("alert")).toHaveTextContent("Network failure");
   });
 
-  it("erro local tem prioridade sobre errorMessage externa", async () => {
+  it("local error takes precedence over external errorMessage", async () => {
     const user = userEvent.setup();
-    render(<CreateRoomForm onSubmit={vi.fn()} errorMessage="Falha de rede" />);
-    await user.click(screen.getByRole("button", { name: /criar sala/i }));
-    expect(screen.getByRole("alert")).toHaveTextContent(/apelido/i);
+    render(<CreateRoomForm onSubmit={vi.fn()} errorMessage="Network failure" />);
+    await user.click(screen.getByRole("button", { name: /create room/i }));
+    expect(screen.getByRole("alert")).toHaveTextContent(/nickname/i);
   });
 });

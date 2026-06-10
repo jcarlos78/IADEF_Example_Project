@@ -7,7 +7,7 @@ import { Results } from "./Results";
 function pt(over: Partial<Participant>): Participant {
   return {
     sessionId: "s-1",
-    nickname: "Alguém",
+    nickname: "Someone",
     isHost: false,
     hasVoted: true,
     connected: true,
@@ -16,7 +16,7 @@ function pt(over: Partial<Participant>): Participant {
 }
 
 describe("Results — AC5", () => {
-  it("renderiza média, mínimo e máximo formatados", () => {
+  it("renders formatted mean, min and max", () => {
     const result: RoundResult = {
       votesBySession: { "s-1": "3", "s-2": "5" },
       average: 4,
@@ -33,13 +33,13 @@ describe("Results — AC5", () => {
         ]}
       />,
     );
-    const stats = screen.getByLabelText(/estatísticas/i);
+    const stats = screen.getByLabelText(/statistics/i);
     expect(within(stats).getByText("4")).toBeInTheDocument();
     expect(within(stats).getByText("3")).toBeInTheDocument();
     expect(within(stats).getByText("5")).toBeInTheDocument();
   });
 
-  it("formata média não-inteira com 2 casas decimais", () => {
+  it("formats a non-integer mean with 2 decimals", () => {
     const result: RoundResult = {
       votesBySession: { "s-1": "3", "s-2": "5", "s-3": "8" },
       average: (3 + 5 + 8) / 3,
@@ -51,7 +51,7 @@ describe("Results — AC5", () => {
     expect(screen.getByText("5.33")).toBeInTheDocument();
   });
 
-  it("exibe '—' quando não há votos numéricos (todos ? ou ☕)", () => {
+  it("shows '—' when there are no numeric votes (all ? or ☕)", () => {
     const result: RoundResult = {
       votesBySession: { "s-1": "?", "s-2": "☕" },
       average: null,
@@ -60,11 +60,11 @@ describe("Results — AC5", () => {
       counts: { "?": 1, "☕": 1 },
     };
     render(<Results result={result} participants={[]} />);
-    const stats = screen.getByLabelText(/estatísticas/i);
+    const stats = screen.getByLabelText(/statistics/i);
     expect(within(stats).getAllByText("—")).toHaveLength(3);
   });
 
-  it("lista cada participante com seu voto", () => {
+  it("lists each participant with their vote", () => {
     const result: RoundResult = {
       votesBySession: { "s-host": "13", "s-alice": "8" },
       average: 10.5,
@@ -76,19 +76,19 @@ describe("Results — AC5", () => {
       <Results
         result={result}
         participants={[
-          pt({ sessionId: "s-host", nickname: "Anfitriã", isHost: true }),
+          pt({ sessionId: "s-host", nickname: "Host", isHost: true }),
           pt({ sessionId: "s-alice", nickname: "Alice" }),
         ]}
       />,
     );
-    const votes = screen.getByLabelText(/votos por participante/i);
-    expect(within(votes).getByText("Anfitriã")).toBeInTheDocument();
+    const votes = screen.getByLabelText(/votes per participant/i);
+    expect(within(votes).getByText("Host")).toBeInTheDocument();
     expect(within(votes).getByText("13")).toBeInTheDocument();
     expect(within(votes).getByText("Alice")).toBeInTheDocument();
     expect(within(votes).getByText("8")).toBeInTheDocument();
   });
 
-  it("mostra '—' para participantes que não votaram", () => {
+  it("shows '—' for participants who did not vote", () => {
     const result: RoundResult = {
       votesBySession: { "s-1": "5" },
       average: 5,
@@ -105,12 +105,12 @@ describe("Results — AC5", () => {
         ]}
       />,
     );
-    const list = screen.getByLabelText(/votos por participante/i);
+    const list = screen.getByLabelText(/votes per participant/i);
     const items = within(list).getAllByRole("listitem");
     expect(items[1]).toHaveTextContent("DidNotVote: —");
   });
 
-  it("renderiza distribuição ordenada por frequência (maior primeiro)", () => {
+  it("renders the distribution ordered by frequency (highest first)", () => {
     const result: RoundResult = {
       votesBySession: { a: "5", b: "5", c: "5", d: "8" },
       average: 5.75,
@@ -119,7 +119,7 @@ describe("Results — AC5", () => {
       counts: { "5": 3, "8": 1 },
     };
     render(<Results result={result} participants={[]} />);
-    const dist = screen.getByLabelText(/distribuição/i);
+    const dist = screen.getByLabelText(/vote distribution/i);
     const items = within(dist).getAllByRole("listitem");
     expect(items[0]).toHaveTextContent("5: 3");
     expect(items[1]).toHaveTextContent("8: 1");

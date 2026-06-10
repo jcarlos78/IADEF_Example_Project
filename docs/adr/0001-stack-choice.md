@@ -1,4 +1,4 @@
-# ADR 0001 — Stack: Next.js + Socket.IO em servidor Node único
+# ADR 0001 — Stack: Next.js + Socket.IO on a single Node server
 
 - **Status:** accepted
 - **Date:** 2026-06-09
@@ -6,74 +6,74 @@
 
 ## Context
 
-O projeto entrega um web app de Planning Poker em tempo real para times ágeis internos (spec `specs/planning-poker/spec.md`). Os requisitos arquiteturais que dirigem a escolha de stack:
+The project delivers a real-time Planning Poker web app for internal agile teams (spec `specs/planning-poker/spec.md`). The architectural requirements that drive the stack choice:
 
-- **Tempo real bidirecional:** servidor empurra eventos (voto registrado, revelação, entrada/saída) para todos os clientes da sala, com latência sub-segundo (AC4 do spec).
-- **Estado vivo no servidor:** salas são efêmeras, em memória. Não há banco no MVP.
-- **MVP enxuto:** time pequeno, deploy interno, sem expectativa de >1 réplica no curto prazo.
-- **Front + back em um repo:** evita orquestrar dois projetos para um MVP de poucos meses de horizonte.
-- **TypeScript em tudo:** tipos compartilhados de eventos entre client e server eliminam uma classe inteira de bugs em protocolos WebSocket.
+- **Bidirectional real-time:** the server pushes events (vote registered, reveal, join/leave) to every client in the room with sub-second latency (AC4 of the spec).
+- **Live state on the server:** rooms are ephemeral, in-memory. No database in the MVP.
+- **Lean MVP:** small team, internal deployment, no expectation of more than 1 replica in the short term.
+- **Frontend + backend in one repo:** avoids orchestrating two projects for an MVP with a few months horizon.
+- **TypeScript everywhere:** shared event types between client and server kill an entire class of WebSocket protocol bugs.
 
-Não há decisões arquiteturais anteriores no repositório (`docs/adr/` está vazio). O `CLAUDE.md` deixou a seção *tech stack* em branco; esta ADR preenche essa lacuna para o feature em questão.
+There are no prior architectural decisions in the repository (`docs/adr/` was empty). The `CLAUDE.md` left the *tech stack* section blank; this ADR fills that gap for the feature at hand.
 
 ## Decision
 
-Usaremos **Next.js 15+ (App Router) com TypeScript** como framework principal, rodando atrás de um **custom HTTP server Node.js** que integra **Socket.IO** para comunicação em tempo real. Todo o estado das salas vive **em memória num único processo Node**, sem Redis nem adapter de cluster no MVP.
+We will use **Next.js 15+ (App Router) with TypeScript** as the main framework, running behind a **custom Node.js HTTP server** that integrates **Socket.IO** for real-time communication. All room state lives **in memory in a single Node process**, with no Redis nor cluster adapter in the MVP.
 
-Detalhes:
-- **Frontend e backend no mesmo projeto Next.js.** Rotas HTTP via App Router; canal de tempo real via Socket.IO sobre o mesmo servidor HTTP.
-- **Custom `server.ts`** chama `next({...}).prepare()` e anexa o servidor Socket.IO ao mesmo `http.Server`. Isso impede deploy em runtime serverless (Vercel default), mas é compatível com qualquer VM/container Node.
-- **Tipos compartilhados** em `src/lib/events.ts` consumidos tanto no client quanto no server.
-- **Testes** com Vitest (unit + protocolo) e Playwright (E2E multi-browser).
+Details:
+- **Frontend and backend in the same Next.js project.** HTTP routes via App Router; real-time channel via Socket.IO over the same HTTP server.
+- **Custom `server.ts`** calls `next({...}).prepare()` and attaches the Socket.IO server to the same `http.Server`. This precludes serverless runtimes (Vercel default) but is compatible with any Node VM/container.
+- **Shared types** in `src/lib/events.ts` consumed both client- and server-side.
+- **Tests** with Vitest (unit + protocol) and Playwright (multi-browser E2E).
 
 ## Alternatives considered
 
-- **Python + FastAPI + WebSocket nativo + React/Vite separado.**
-  Prós: FastAPI tem WebSocket nativo bom; ecossistema Python forte. Contras: dois projetos (back e front) para coordenar, dois deploys, dois lockfiles, dois pipelines de CI. Para um MVP de poucos meses, é overhead desproporcional. **Rejeitado.**
+- **Python + FastAPI + native WebSocket + separate React/Vite.**
+  Pros: FastAPI has solid native WebSocket support; strong Python ecosystem. Cons: two projects (back and front) to coordinate, two deployments, two lockfiles, two CI pipelines. For an MVP with a few months horizon, the overhead is disproportionate. **Rejected.**
 
-- **Go + Gorilla WebSocket + frontend HTML/JS vanilla.**
-  Prós: backend altamente performático, binário único, deploy trivial. Contras: ergonomia de UI bem mais pobre sem framework moderno; perdemos tipos compartilhados client↔server; equipe sem expertise Go documentada para este projeto. **Rejeitado** — performance não é o gargalo deste produto (10 conexões por sala).
+- **Go + Gorilla WebSocket + vanilla HTML/JS frontend.**
+  Pros: highly performant backend, single binary, trivial deployment. Cons: much poorer UI ergonomics without a modern framework; we lose shared client↔server types; team without documented Go expertise for this project. **Rejected** — performance is not the bottleneck of this product (10 connections per room).
 
-- **Next.js puro com Server-Sent Events (SSE) ou polling em vez de WebSocket.**
-  Prós: roda em Vercel serverless sem custom server. Contras: SSE é unidirecional; polling tem latência maior e mais carga de servidor. WebSocket é o ajuste natural para o caso (eventos bidirecionais, baixa latência). **Rejeitado.**
+- **Pure Next.js with Server-Sent Events (SSE) or polling instead of WebSocket.**
+  Pros: runs on Vercel serverless without a custom server. Cons: SSE is unidirectional; polling has higher latency and more server load. WebSocket is the natural fit (bidirectional events, low latency). **Rejected.**
 
-- **Next.js + provedor terceiro de tempo real (Ably, Pusher, Liveblocks, Supabase Realtime).**
-  Prós: zero infra de WebSocket; escala automática. Contras: dependência externa paga, dados saem do perímetro interno, vendor lock-in. Para o requisito explícito de "ferramenta interna", contradiz a motivação do produto. **Rejeitado.**
+- **Next.js + third-party real-time provider (Ably, Pusher, Liveblocks, Supabase Realtime).**
+  Pros: zero WebSocket infrastructure; auto-scales. Cons: paid external dependency, data leaves the internal perimeter, vendor lock-in. For the explicit "internal tool" requirement, it contradicts the product's motivation. **Rejected.**
 
-- **NestJS + Socket.IO + frontend Next.js separado.**
-  Prós: estrutura mais opinada no backend. Contras: dois projetos novamente; e o ganho de "estrutura" não compensa para um servidor que tem ~5 handlers de socket. **Rejeitado.**
+- **NestJS + Socket.IO + separate Next.js frontend.**
+  Pros: more opinionated structure on the backend. Cons: two projects again; the "structure" win doesn't pay for itself in a server with ~5 socket handlers. **Rejected.**
 
 ## Consequences
 
 ### Positive
-- Um único repositório, um único `package.json`, um único processo em produção — operação simples.
-- Tipos TypeScript de eventos compartilhados eliminam contratos quebrados entre client e server.
-- Socket.IO traz reconexão automática, rooms nativos e fallback para long-polling sem código extra (mitiga risco de proxies corporativos hostis a WebSocket bruto).
-- Next.js App Router cobre roteamento, SSR e build de assets — não precisamos montar Vite + Express + roteador + outros.
+- A single repository, a single `package.json`, a single production process — operationally simple.
+- Shared TypeScript event types eliminate broken contracts between client and server.
+- Socket.IO ships automatic reconnection, native rooms, and long-polling fallback at no extra code (mitigates the risk of corporate proxies hostile to raw WebSocket).
+- Next.js App Router covers routing, SSR, and asset build — we don't have to assemble Vite + Express + router + others.
 
 ### Negative (accepted costs)
-- **Não rodaremos em runtime serverless (Vercel Functions, Lambda).** O deploy exige VM/container com processo persistente. Aceitamos para o MVP.
-- **Single point of failure.** Reiniciar o processo derruba todas as salas ativas. Mitigado pelo design "salas efêmeras"; usuários esperam reabrir.
-- **Não escala horizontalmente sem mudança.** Para >1 réplica precisaríamos sticky sessions + Redis adapter do Socket.IO. Fora de escopo do MVP — será revisitado quando houver demanda real.
-- **Hot reload do Next.js + Socket.IO em custom server é menos suave** que Next dev puro. Documentar no README como rodar.
+- **We will not run on serverless runtimes (Vercel Functions, Lambda).** Deployment requires a VM/container with a persistent process. Accepted for the MVP.
+- **Single point of failure.** Restarting the process drops every active room. Mitigated by the "ephemeral rooms" design; users expect to reopen.
+- **Does not scale horizontally as-is.** For more than 1 replica we would need sticky sessions + Socket.IO's Redis adapter. Out of scope for the MVP — to be revisited when real demand appears.
+- **Hot reload of Next.js + Socket.IO under a custom server is less smooth** than plain Next dev. Document in the README how to run.
 
 ### Neutral
-- O time aprende padrão "Next.js + custom server" — útil para outros casos de tempo real no futuro.
-- Lockfile Node moderno (npm/pnpm) — a decisão de qual gerenciador fica para o task de setup, não é arquitetural.
+- The team learns the "Next.js + custom server" pattern — useful for other real-time cases later on.
+- Modern Node lockfile (npm/pnpm) — which manager to choose is a setup task, not an architectural decision.
 
 ## Constitution adherence
 
-- **Princípio 5 (ADR para decisões arquiteturais):** esta ADR registra a escolha antes da implementação. ✓
-- **Princípio 7 (mudanças atômicas):** stack escolhida facilita PRs pequenos — não há salto entre repos.
-- **Princípio 8 (falha visível):** Socket.IO emite eventos `connect_error` / `disconnect` que serão logados conforme ADR 0002.
-- **Tensão com Princípio 8 a longo prazo:** estado em memória + processo único significa que falha do nó é falha total. Aceita conscientemente para o MVP; superseded ADR no momento que houver requisito de HA.
+- **Principle 5 (ADR for architectural decisions):** this ADR records the choice before implementation. ✓
+- **Principle 7 (atomic changes):** the chosen stack favors small PRs — no jumping between repos.
+- **Principle 8 (fail visibly):** Socket.IO emits `connect_error` / `disconnect` events that will be logged per ADR 0002.
+- **Tension with Principle 8 in the long term:** in-memory state + single process means a node failure is a total failure. Consciously accepted for the MVP; will be superseded by another ADR the moment a HA requirement appears.
 
 ## Future review
 
-Revisitar esta ADR quando:
-- Houver requisito de alta disponibilidade (>1 réplica) ou de persistência de histórico de rodadas.
-- Aparecer pedido de integração com Jira/Linear que mude o perfil do backend.
-- Houver mais de 1 feature em tempo real no repositório (vale extrair um servidor dedicado).
-- Houver mudança organizacional sobre uso de Vercel/serverless interno.
+Revisit this ADR when:
+- A high availability requirement appears (>1 replica) or a need to persist round history.
+- A Jira/Linear integration request changes the backend profile.
+- More than one real-time feature lands in the repository (worth extracting a dedicated server).
+- An organizational shift about internal Vercel/serverless use happens.
 
-Sinal claro de revisão: passar de "1 sala simultânea típica" para "dezenas em paralelo" sem queda — neste ponto Redis adapter e múltiplas réplicas viram requisito.
+Clear review signal: going from "1 simultaneous room typical" to "tens in parallel" without degradation — at that point Redis adapter and multiple replicas become a requirement.

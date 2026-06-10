@@ -10,12 +10,12 @@ const inter = Inter({
 
 export const metadata = {
   title: "Planning Poker",
-  description: "Estimativa colaborativa em tempo real",
+  description: "Real-time collaborative estimation",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="pt-BR" className={inter.variable}>
+    <html lang="en" className={inter.variable}>
       <body>{children}</body>
     </html>
   );
