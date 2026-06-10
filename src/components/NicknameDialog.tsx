@@ -1,6 +1,7 @@
 "use client";
 
 import { type FormEvent, useState } from "react";
+import styles from "./NicknameDialog.module.css";
 
 export interface NicknameDialogProps {
   onSubmit: (nickname: string) => void;
@@ -34,27 +35,40 @@ export function NicknameDialog({
   const visibleError = localError ?? errorMessage ?? null;
 
   return (
-    <form onSubmit={handle} aria-labelledby="nickname-dialog-title">
-      <h2 id="nickname-dialog-title">{title}</h2>
-      <p>{description}</p>
+    <form onSubmit={handle} aria-labelledby="nickname-dialog-title" className={styles.form}>
+      <div className={styles.header}>
+        <h2 id="nickname-dialog-title" className={styles.title}>
+          {title}
+        </h2>
+        <p className={styles.description}>{description}</p>
+      </div>
 
-      <label htmlFor="nickname-dialog-input">Apelido</label>
-      <input
-        id="nickname-dialog-input"
-        type="text"
-        value={nickname}
-        onChange={(e) => setNickname(e.target.value)}
-        autoComplete="off"
-        maxLength={40}
-        disabled={isSubmitting}
-        autoFocus
-      />
+      <div className={styles.field}>
+        <label htmlFor="nickname-dialog-input" className={styles.label}>
+          Apelido
+        </label>
+        <input
+          id="nickname-dialog-input"
+          type="text"
+          value={nickname}
+          onChange={(e) => setNickname(e.target.value)}
+          autoComplete="off"
+          maxLength={40}
+          disabled={isSubmitting}
+          autoFocus
+          className={styles.input}
+        />
+      </div>
 
-      <button type="submit" disabled={isSubmitting}>
+      <button type="submit" disabled={isSubmitting} className={styles.submit}>
         {isSubmitting ? "Entrando..." : "Entrar"}
       </button>
 
-      {visibleError ? <p role="alert">{visibleError}</p> : null}
+      {visibleError ? (
+        <p role="alert" className={styles.alert}>
+          {visibleError}
+        </p>
+      ) : null}
     </form>
   );
 }
