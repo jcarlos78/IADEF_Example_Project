@@ -16,6 +16,7 @@ import type {
   ServerToClientEvents,
 } from "@/lib/events";
 import type { ScaleId } from "@/lib/scales";
+import styles from "./RoomClient.module.css";
 
 type RoomSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
@@ -170,7 +171,7 @@ export function RoomClient({ roomId, initialSessionId, initialNickname }: RoomCl
 
   if (!state) {
     return (
-      <main>
+      <main className={styles.joinPage}>
         <NicknameDialog
           onSubmit={(nickname) => {
             const sid = sessionIdRef.current ?? newSessionId();
@@ -190,6 +191,7 @@ export function RoomClient({ roomId, initialSessionId, initialNickname }: RoomCl
   const isHost = me?.isHost === true;
   const hasActiveRound = state.round !== null && !state.round.revealed;
   const canVote = hasActiveRound;
+  const participantCount = state.participants.length;
 
   function vote(card: string): void {
     setSelectedCard(card);
@@ -214,55 +216,75 @@ export function RoomClient({ roomId, initialSessionId, initialNickname }: RoomCl
   }
 
   return (
-    <main>
-      <header>
-        <h1>Sala {state.roomId}</h1>
-        <p>
-          Escala: <strong>{state.scaleId}</strong>
-          {" · "}
-          {state.participants.length} participante
-          {state.participants.length === 1 ? "" : "s"}
-          {isHost ? " · você é o facilitador" : ""}
-        </p>
+    <main className={styles.page}>
+      <header className={styles.header}>
+        <div className={styles.headerInner}>
+          <h1 className={styles.roomTitle}>
+            <span aria-hidden="true" className={styles.dot} />
+            Sala {state.roomId}
+          </h1>
+          <p className={styles.roomMeta}>
+            <span className={styles.metaChip}>
+              Escala: <strong>{state.scaleId}</strong>
+            </span>
+            <span className={styles.metaChip}>
+              {participantCount} participante{participantCount === 1 ? "" : "s"}
+            </span>
+            {isHost ? <span className={styles.hostBadge}>você é o facilitador</span> : null}
+          </p>
+        </div>
       </header>
 
-      <section aria-labelledby="participants-heading">
-        <h2 id="participants-heading">Participantes</h2>
-        <ParticipantList participants={state.participants} hasActiveRound={hasActiveRound} />
-      </section>
+      <div className={styles.content}>
+        <div className={styles.mainCol}>
+          {state.round?.revealed && state.round.result ? (
+            <Results result={state.round.result} participants={state.participants} />
+          ) : (
+            <section aria-labelledby="vote-heading" className={styles.panel}>
+              <h2
+                id="vote-heading"
+                className={hasActiveRound ? styles.voteTitle : styles.voteIdle}
+              >
+                {hasActiveRound
+                  ? `Votando${state.round?.title ? ` em ${state.round.title}` : ""}`
+                  : "Aguardando início da rodada"}
+              </h2>
+              <div className={styles.cardArea}>
+                <CardPicker
+                  scaleId={state.scaleId}
+                  selectedCard={selectedCard}
+                  onSelect={vote}
+                  disabled={!canVote || isDispatching}
+                />
+              </div>
+            </section>
+          )}
 
-      {state.round?.revealed && state.round.result ? (
-        <Results result={state.round.result} participants={state.participants} />
-      ) : (
-        <section aria-labelledby="vote-heading">
-          <h2 id="vote-heading">
-            {hasActiveRound
-              ? `Votando${state.round?.title ? ` em ${state.round.title}` : ""}`
-              : "Aguardando início da rodada"}
-          </h2>
-          <CardPicker
-            scaleId={state.scaleId}
-            selectedCard={selectedCard}
-            onSelect={vote}
-            disabled={!canVote || isDispatching}
-          />
-        </section>
-      )}
+          {isHost ? (
+            <RoundControls
+              scaleId={state.scaleId}
+              round={state.round}
+              onStartRound={startRound}
+              onReveal={reveal}
+              onResetRound={resetRound}
+              onChangeScale={changeScale}
+              isSubmitting={isDispatching}
+            />
+          ) : null}
+        </div>
 
-      {isHost ? (
-        <RoundControls
-          scaleId={state.scaleId}
-          round={state.round}
-          onStartRound={startRound}
-          onReveal={reveal}
-          onResetRound={resetRound}
-          onChangeScale={changeScale}
-          isSubmitting={isDispatching}
-        />
-      ) : null}
+        <aside className={styles.sidebar}>
+          <section aria-labelledby="participants-heading" className={styles.panel}>
+            <h2 id="participants-heading" className={styles.panelHeading}>
+              Participantes
+            </h2>
+            <ParticipantList participants={state.participants} hasActiveRound={hasActiveRound} />
+          </section>
+        </aside>
+      </div>
 
       {actionError ? (
-        <p role="alert" data-action-error>
+        <p role="alert" data-action-error className={styles.actionError}>
           {actionError.message}
         </p>
       ) : null}
