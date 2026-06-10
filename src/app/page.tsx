@@ -1,8 +1,49 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { CreateRoomForm } from "@/components/CreateRoomForm";
+import type { ScaleId } from "@/lib/scales";
+
 export default function HomePage() {
+  const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  async function handle({
+    scaleId,
+    hostNickname,
+  }: {
+    scaleId: ScaleId;
+    hostNickname: string;
+  }): Promise<void> {
+    setIsSubmitting(true);
+    setErrorMessage(null);
+    try {
+      const res = await fetch("/api/rooms", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ scaleId, hostNickname }),
+      });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as {
+          error?: { message?: string };
+        };
+        setErrorMessage(body.error?.message ?? "Falha ao criar sala.");
+        return;
+      }
+      const data = (await res.json()) as { roomId: string };
+      router.push(`/room/${data.roomId}`);
+    } catch {
+      setErrorMessage("Erro de rede ao criar sala.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
   return (
     <main>
-      <h1>Planning Poker</h1>
-      <p>Setup placeholder &mdash; UI vir&aacute; nos pr&oacute;ximos tasks.</p>
+      <CreateRoomForm onSubmit={handle} isSubmitting={isSubmitting} errorMessage={errorMessage} />
     </main>
   );
 }

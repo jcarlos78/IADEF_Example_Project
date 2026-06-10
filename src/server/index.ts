@@ -9,7 +9,8 @@ import type {
   SocketData,
 } from "@/lib/events";
 import { logger } from "./logger";
-import { ROOM_TTL_MS, RoomStore } from "./rooms/store";
+import { store } from "./rooms/instance";
+import { ROOM_TTL_MS } from "./rooms/store";
 import { registerHandlers, tick } from "./socket/handlers";
 
 const port = Number(process.env.PORT) || 3000;
@@ -37,8 +38,6 @@ async function main(): Promise<void> {
     InterServerEvents,
     SocketData
   >(httpServer);
-
-  const store = new RoomStore();
 
   registerHandlers({
     io,
