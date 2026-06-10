@@ -16,8 +16,9 @@ import { registerHandlers, tick } from "./socket/handlers";
 const port = Number(process.env.PORT) || 3000;
 const dev = process.env.NODE_ENV !== "production";
 
-const HOST_GRACE_MS = 30_000;
-const TICK_INTERVAL_MS = 5_000;
+const HOST_GRACE_MS = Number(process.env.HOST_GRACE_MS) || 30_000;
+const TICK_INTERVAL_MS = Number(process.env.TICK_INTERVAL_MS) || 5_000;
+const ROOM_TTL_MS_OVERRIDE = Number(process.env.ROOM_TTL_MS) || ROOM_TTL_MS;
 
 function generateRoomId(): string {
   return Math.random().toString(36).slice(2, 10);
@@ -56,12 +57,22 @@ async function main(): Promise<void> {
       generateRoomId,
       generateSessionId: () => randomUUID(),
       hostGracePeriodMs: HOST_GRACE_MS,
-      ttlMs: ROOM_TTL_MS,
+      ttlMs: ROOM_TTL_MS_OVERRIDE,
     });
   }, TICK_INTERVAL_MS);
 
   httpServer.listen(port, () => {
-    logger.info({ event: "server.started", port, dev }, `Ready on http://localhost:${port}`);
+    logger.info(
+      {
+        event: "server.started",
+        port,
+        dev,
+        hostGraceMs: HOST_GRACE_MS,
+        tickMs: TICK_INTERVAL_MS,
+        ttlMs: ROOM_TTL_MS_OVERRIDE,
+      },
+      `Ready on http://localhost:${port}`,
+    );
   });
 
   const shutdown = (signal: NodeJS.Signals): void => {
