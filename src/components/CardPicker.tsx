@@ -1,6 +1,7 @@
 "use client";
 
 import { getScale, type ScaleId } from "@/lib/scales";
+import styles from "./CardPicker.module.css";
 
 export interface CardPickerProps {
   scaleId: ScaleId;
@@ -12,7 +13,7 @@ export interface CardPickerProps {
 export function CardPicker({ scaleId, selectedCard, onSelect, disabled }: CardPickerProps) {
   const scale = getScale(scaleId);
   return (
-    <div role="group" aria-label="Cartas para votar">
+    <div role="group" aria-label="Cartas para votar" className={styles.group}>
       {scale.cards.map((card) => {
         const isSelected = selectedCard === card;
         return (
@@ -23,6 +24,7 @@ export function CardPicker({ scaleId, selectedCard, onSelect, disabled }: CardPi
             data-selected={isSelected ? "true" : undefined}
             onClick={() => onSelect(card)}
             disabled={disabled}
+            className={styles.card}
           >
             {card}
           </button>
