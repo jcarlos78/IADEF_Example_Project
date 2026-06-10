@@ -294,17 +294,17 @@ README final com: descrição, screenshot opcional, como rodar (dev / build / e2
 
 | AC do spec | Task(s) | Status |
 |---|---|---|
-| AC1 — criar sala c/ URL única | Task 5, Task 8, Task 9, Task 12 (create-and-join) | pending |
-| AC2 — entrar via URL c/ apelido | Task 8, Task 10, Task 12 (create-and-join) | pending |
-| AC3 — voto oculto até revelar | Task 5, Task 8, Task 11, Task 12 (vote-and-reveal) | pending |
-| AC4 — revelar broadcast < 1s | Task 8, Task 11, Task 12 (vote-and-reveal) | pending |
-| AC5 — média/min/max | Task 4, Task 11, Task 12 (vote-and-reveal) | pending |
-| AC6 — nova rodada reseta | Task 5, Task 8, Task 11, Task 12 (vote-and-reveal) | pending |
-| AC7 — escalas (incl. troca entre rodadas) | Task 3, Task 5, Task 11, Task 12 (scale-switch) | pending |
-| AC8 — apelido vazio/duplicado | Task 5, Task 10, Task 12 (create-and-join) | pending |
-| AC9 — sala expira após 10min | Task 6 | pending |
-| AC10 — handoff de facilitador | Task 5, Task 8, Task 12 (facilitator-handoff) | pending |
-| AC11 — sala inexistente | Task 8, Task 10, Task 12 (create-and-join) | pending |
-| AC12 — entrada/saída em tempo real | Task 8, Task 10, Task 12 (vote-and-reveal) | pending |
+| AC1 — criar sala c/ URL única | Task 5, Task 8, Task 9, Task 12 (create-and-join) | done |
+| AC2 — entrar via URL c/ apelido | Task 8, Task 10, Task 12 (create-and-join) | done |
+| AC3 — voto oculto até revelar | Task 5, Task 8, Task 11, Task 12 (vote-and-reveal) | done |
+| AC4 — revelar broadcast < 1s | Task 8, Task 11, Task 12 (vote-and-reveal) | done |
+| AC5 — média/min/max | Task 4, Task 11, Task 12 (vote-and-reveal) | done |
+| AC6 — nova rodada reseta | Task 5, Task 8, Task 11, Task 12 (vote-and-reveal) | done |
+| AC7 — escalas (incl. troca entre rodadas) | Task 3, Task 5, Task 11, Task 12 (scale-switch) | done |
+| AC8 — apelido vazio/duplicado | Task 5, Task 10, Task 12 (create-and-join) | done |
+| AC9 — sala expira após 10min | Task 6 | done |
+| AC10 — handoff de facilitador | Task 5, Task 8, Task 12 (facilitator-handoff) | done |
+| AC11 — sala inexistente | Task 8, Task 10, Task 12 (create-and-join) | done |
+| AC12 — entrada/saída em tempo real | Task 8, Task 10, Task 12 (vote-and-reveal) | done |
 
-> Atualizar status conforme cada task for completado.
+> Atualizado em 2026-06-10 — feature completa. Veja `git log --oneline --grep="planning-poker"` para os commits por task.

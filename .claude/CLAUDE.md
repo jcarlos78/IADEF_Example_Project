@@ -6,28 +6,43 @@
 
 ## Overview
 
-**Project name:** `[PROJECT NAME]`
+**Project name:** Planning Poker
 
-**One-line description:** `[WHAT THE APPLICATION DOES]`
+**One-line description:** Web app de Planning Poker em tempo real para estimativa colaborativa de times ágeis. Salas efêmeras, votos ocultos até o facilitador revelar.
 
-**Current status:** `[concept | in development | in production | in maintenance]`
+**Current status:** in development (MVP completo — feature `planning-poker` implementada e validada por unit + protocol + E2E)
 
 ## Tech stack
 
-- **Primary language:** `[e.g., Python 3.12 / Node.js 22 / Go 1.23]`
-- **Framework:** `[e.g., FastAPI / Next.js / etc.]`
-- **Database:** `[e.g., PostgreSQL 16]`
-- **Deployment:** `[e.g., GCP Cloud Run / AWS ECS / on-prem k8s]`
+- **Primary language:** TypeScript / Node.js 22
+- **Framework:** Next.js 15 (App Router) + Socket.IO 4, num único processo Node (custom server). Frontend e backend no mesmo projeto.
+- **Database:** nenhum — estado das salas vive em memória num `Map<roomId, RoomState>`. Decisão registrada em [ADR 0001](../docs/adr/0001-stack-choice.md).
+- **Deployment:** VM/container Node (não-serverless por causa do WebSocket persistente). Não definido em produção ainda.
 
 ## Relevant folder structure
 
-```
+```text
 .
-├── .claude/                IADE agent configuration
-├── specs/                  SDD specs — source of truth for behavior
-├── docs/adr/               Architecture Decision Records
-├── src/                    Source code
-└── tests/                  Tests
+├── .claude/                       IADE agent configuration
+├── specs/                         SDD specs — source of truth
+│   ├── constitution.md            principles (don't violate without ADR)
+│   └── planning-poker/            spec, plan, tasks da feature implementada
+├── docs/adr/                      Architecture Decision Records
+│   ├── 0001-stack-choice.md       Next.js + Socket.IO em processo Node único
+│   └── 0002-logging-strategy.md   Pino, sem PII em info
+├── src/
+│   ├── lib/                       puro, sem I/O: scales, stats, events (tipos)
+│   ├── server/
+│   │   ├── index.ts               custom server: Next + Socket.IO + tick interval
+│   │   ├── logger.ts              wrapper Pino (ADR 0002)
+│   │   ├── rooms/                 room state machine + store + singleton
+│   │   └── socket/handlers.ts     mapeia eventos socket ↔ store
+│   ├── app/                       Next.js App Router
+│   │   ├── page.tsx               Home (Client)
+│   │   ├── api/rooms/route.ts     POST cria sala
+│   │   └── room/[id]/             Server Component + RoomClient
+│   └── components/                CardPicker, RoundControls, Results, ...
+└── tests/e2e/                     Playwright (Chromium)
 ```
 
 ## Mandatory operating principles
@@ -41,15 +56,16 @@ Before any code change, the agent MUST:
 
 ## Code conventions
 
-- `[e.g., ESLint config / Black + Ruff / gofmt]`
-- `[e.g., tests required for every public function]`
-- `[e.g., Conventional Commits]`
+- ESLint flat config com `next/core-web-vitals` + `next/typescript` + `no-console: error` (override `off` em `*.test.*`). Veja `eslint.config.mjs`.
+- Prettier (printWidth 100, trailingComma all). `specs/`, `docs/`, `.claude/` ignorados (formato hand-tuned).
+- Vitest para unit + protocol; `// @vitest-environment jsdom` por arquivo nos `.test.tsx`.
+- Conventional Commits (`feat:`, `fix:`, `chore:`, `test:`, `docs:`, escopo `(planning-poker)` quando aplicável).
+- Tudo TypeScript estrito (`tsc --noEmit` no CI mental — rodar `npm run typecheck`).
+- Comentários só quando o "porquê" não é óbvio. Naming carrega o "o quê".
 
 ## Critical integrations
 
-`[List internal systems this project integrates with. For each, indicate whether there's an MCP configured.]`
-
-- `[System X]` — `[via MCP / via REST API / via client library]`
+Nenhuma — o app é self-contained. Sem banco, sem auth, sem APIs externas em runtime.
 
 ## How the agent should work
 
@@ -69,6 +85,6 @@ See `.claude/skills/`:
 
 ## Contacts and governance
 
-- **Maintainers:** `[names / emails]`
-- **Review channel:** `[e.g., GitHub PR / Slack #channel]`
-- **Human-response SLA:** `[e.g., 24h on business days]`
+- **Maintainers:** José Menezes (<jcarlos78@gmail.com>)
+- **Review channel:** GitHub PR
+- **Human-response SLA:** sem SLA formal — projeto pessoal/educacional

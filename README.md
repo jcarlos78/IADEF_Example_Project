@@ -1,117 +1,123 @@
-# IADE Project Template
+# Planning Poker
 
-> **This repo is being used to build a Planning Poker web app** — see [specs/planning-poker/](specs/planning-poker/) for the SDD docs (spec, plan, tasks) and [docs/adr/](docs/adr/) for architectural decisions.
->
-> **Quick start (this app):**
->
-> ```bash
-> npm install
-> npm run dev          # http://localhost:3000
-> npm run typecheck    # tsc --noEmit
-> npm run build
-> ```
+Estimativa colaborativa em tempo real para times ágeis. Várias pessoas entram numa mesma sala, votam em itens de backlog com cartas ocultas e veem o resultado consolidado quando o facilitador revelar.
 
----
+Stack: **Next.js 15** (App Router) + **Socket.IO** num **único processo Node** (custom server). Estado em memória, salas efêmeras. Sem banco, sem auth.
 
-A pre-configured **Integrated Agentive Development Environment (IADE)** for disciplined vibe coding with AI assistants (Claude Code, Cursor, Windsurf, Codex, etc.).
+> **Documentação:** spec, plan, tasks em [specs/planning-poker/](specs/planning-poker/). Decisões arquiteturais em [docs/adr/](docs/adr/).
 
-Use this as the base for any new project where you want AI-assisted development with proper guardrails: spec-first, test-first, human-in-command.
-
-## What you get out of the box
-
-Three native amplifiers wired up and ready:
-
-- **Skills** in `.claude/skills/` — reusable agent procedures (spec writing, code review, ADRs, test generation)
-- **MCPs** in `.mcp.json` — Model Context Protocol server config (filesystem, postgres, GitHub, custom APIs)
-- **SDD** in `specs/` — Spec-Driven Development structure with a working example
-
-## Structure
-
-```
-.
-├── .claude/
-│   ├── settings.json          Permissions and model
-│   ├── CLAUDE.md              Project briefing (auto-loaded by the agent)
-│   └── skills/                Available skills
-│       ├── spec-writer.md     Writes SDD specs
-│       ├── code-reviewer.md   Reviews the current diff
-│       ├── adr-writer.md      Writes Architecture Decision Records
-│       └── test-generator.md  Generates tests from specs
-├── .mcp.json                  Model Context Protocol config
-├── specs/                     Spec-Driven Development
-│   ├── constitution.md        Non-negotiable principles
-│   ├── README.md              How to use the SDD flow
-│   ├── template/              Spec / plan / tasks templates
-│   └── example-feature/       Complete example (spec → plan → tasks)
-├── docs/                      Project documentation
-│   └── adr/                   Architecture Decision Records
-├── src/                       Source code (empty by design)
-├── tests/                     Tests
-├── LICENSE                    MIT
-└── README.md                  This file
-```
-
-## Getting started
-
-### 1. Use this template
-
-On GitHub, click **"Use this template"**. Or clone manually:
+## Quick start
 
 ```bash
-git clone <this-repo-url> my-project
-cd my-project
-rm -rf .git && git init
+npm install                 # instala deps Node
+npm run e2e:install         # baixa Chromium para Playwright (apenas para E2E)
+
+npm run dev                 # http://localhost:3000 (tsx watch + Next dev)
+npm run build && npm run start   # produção
 ```
 
-### 2. Customize
+Abra a home, escolha uma escala, crie a sala. Compartilhe a URL `/room/<id>` com o time.
 
-- Edit `.claude/CLAUDE.md` with your project briefing
-- Adapt `specs/constitution.md` to your team's principles
-- Edit `.mcp.json` to point at the systems you actually use (or remove servers you don't)
-- Keep or drop skills as needed
+## Scripts
 
-### 3. Open in your agentive IDE
+| Script                            | O que faz                                                                                |
+| --------------------------------- | ---------------------------------------------------------------------------------------- |
+| `npm run dev`                     | Custom server com hot reload (`tsx watch src/server/index.ts`) em `NODE_ENV=development` |
+| `npm run build`                   | `next build`                                                                             |
+| `npm run start`                   | Produção: `tsx src/server/index.ts` em `NODE_ENV=production`                             |
+| `npm run typecheck`               | `tsc --noEmit`                                                                           |
+| `npm run lint`                    | ESLint flat config (Next + TS + `no-console`)                                            |
+| `npm run format` / `format:check` | Prettier                                                                                 |
+| `npm test`                        | Vitest (unit + protocolo socket.io) — **140 testes**                                     |
+| `npm run e2e`                     | Playwright Chromium contra build de produção — **11 testes**                             |
 
-- **Claude Code**: run `claude` in the project root
-- **Cursor / Windsurf**: open the folder; both honor `.claude/`
-- **Codex**: point the CLI at the directory
+## Variáveis de ambiente
 
-### 4. Start with the SDD flow
+| Var                | Default                      | Função                                                                   |
+| ------------------ | ---------------------------- | ------------------------------------------------------------------------ |
+| `PORT`             | `3000`                       | porta HTTP/WebSocket do servidor                                         |
+| `NODE_ENV`         | `development`                | `production` desabilita pretty logs                                      |
+| `LOG_LEVEL`        | `debug` (dev), `info` (prod) | nível do Pino                                                            |
+| `HOST_GRACE_MS`    | `30000`                      | grace period para promover novo facilitador após host desconectar (AC10) |
+| `TICK_INTERVAL_MS` | `5000`                       | frequência da varrida de TTL + transferência de host                     |
+| `ROOM_TTL_MS`      | `600000`                     | sala sem atividade é descartada após esse tempo (AC9)                    |
 
-**Don't ask for code before writing a spec.** Use the `spec-writer` skill:
+Exemplo em `.env.example`.
 
+## Como funciona
+
+- **Home (`/`)** — formulário cria sala via `POST /api/rooms`. O server gera `roomId` (8 chars base36) + `hostSessionId` (UUID), seta cookies HttpOnly `pp_session_<roomId>` e `pp_nickname_<roomId>`, redireciona para `/room/<roomId>`.
+- **Sala (`/room/[id]`)** — Server Component lê os cookies e hidrata o `RoomClient`. Cliente conecta Socket.IO, faz `room:join` automaticamente se já tem identidade (cookie ou localStorage), senão mostra `NicknameDialog`.
+- **Tempo real** — toda mudança de estado é broadcastada como `room:state` para os sockets da sala. Voto é **só estado local do cliente** até o facilitador clicar "Revelar"; o servidor sanitiza via `toPublic()` antes de enviar.
+- **Identidade** — host via cookie HttpOnly (server pode ler em SSR). Guest gera UUID client-side e persiste em `localStorage` por sala para sobreviver a reload sem virar duplicata.
+
+## Mapping AC → testes
+
+| AC   | Comportamento                 | Onde é testado                                                                            |
+| ---- | ----------------------------- | ----------------------------------------------------------------------------------------- |
+| AC1  | Criar sala com URL única      | `room.test.ts`, `handlers.test.ts`, E2E create-and-join                                   |
+| AC2  | Entrar via URL com apelido    | `handlers.test.ts`, E2E create-and-join                                                   |
+| AC3  | Voto oculto até revelar       | `room.test.ts` (toPublic), `handlers.test.ts` (JSON serializável), E2E vote-and-reveal    |
+| AC4  | Reveal broadcast < 1s         | E2E vote-and-reveal (mede `Date.now()`)                                                   |
+| AC5  | Média/min/max                 | `stats.test.ts`, `Results.test.tsx`, E2E vote-and-reveal                                  |
+| AC6  | Nova rodada reseta            | `room.test.ts`, E2E vote-and-reveal                                                       |
+| AC7  | Escalas + troca entre rodadas | `scales.test.ts`, `room.test.ts`, `RoundControls.test.tsx`, E2E scale-switch              |
+| AC8  | Apelido vazio/duplicado       | `room.test.ts`, `CreateRoomForm.test.tsx`, `NicknameDialog.test.tsx`, E2E create-and-join |
+| AC9  | Sala efêmera após 10 min      | `store.test.ts`, `handlers.test.ts` (tick)                                                |
+| AC10 | Handoff de facilitador        | `room.test.ts` (fake timers), E2E facilitator-handoff                                     |
+| AC11 | Sala inexistente              | `handlers.test.ts`, `RoomErrorView.test.tsx`, E2E create-and-join                         |
+| AC12 | Entrada/saída em tempo real   | `handlers.test.ts`, `ParticipantList.test.tsx`, E2E vote-and-reveal                       |
+
+## Limitações conhecidas (out of scope no MVP)
+
+- **Sem persistência.** Reiniciar o processo derruba todas as salas. Documentado em [docs/adr/0001-stack-choice.md](docs/adr/0001-stack-choice.md).
+- **Single replica.** Não escala horizontalmente sem mudar (precisaria Redis adapter do Socket.IO + sticky sessions). Decisão de MVP.
+- **Sem autenticação.** Qualquer pessoa com o link entra com qualquer apelido. Apelidos duplicados são bloqueados, mas a sala em si é pública.
+- **UI funcional, sem CSS.** Marcação semântica e acessível (roles ARIA), mas sem polimento visual. Estilização ficou fora do escopo do MVP.
+- **Sem export.** Resultado da rodada não é exportável (CSV, JSON, Jira).
+- **Sem chat ou timer.**
+- **Português apenas.** Sem i18n.
+
+Lista completa em [specs/planning-poker/spec.md](specs/planning-poker/spec.md) (seção "Out of scope").
+
+## Arquitetura resumida
+
+```text
+                   ┌──────────────────────────────────┐
+  Browser  ──HTTP──┤  Next.js (App Router)            │
+                   │   /            (Home)            │
+                   │   /room/[id]   (Server Component)│
+                   │   /api/rooms   (POST handler)    │
+                   └────────────┬─────────────────────┘
+                                │ shared singleton
+                                ▼
+                   ┌──────────────────────────────────┐
+  Browser  ──WS────┤  Socket.IO @ same httpServer     │
+                   │   handlers → RoomStore → room.ts │
+                   │   tick (cleanup + host handoff)  │
+                   └──────────────────────────────────┘
 ```
-/spec-writer I want to add: users can export their history as CSV
-```
 
-The skill walks you through: **spec → plan → tasks → implementation**, with a human gate at each step.
+Camadas:
 
-## Philosophy
+- `src/lib/` — **puro**, sem I/O: `scales`, `stats`, `events` (tipos).
+- `src/server/rooms/` — **puro**: `room.ts` (state machine), `store.ts` (in-memory Map + TTL), `instance.ts` (singleton via `globalThis Symbol` — necessário porque Next bundle separa route handlers do custom server).
+- `src/server/socket/handlers.ts` — adapta Socket.IO ↔ store, broadcasta `room:state`.
+- `src/server/index.ts` — boot do Next + Socket.IO + `setInterval(tick)`.
+- `src/app/` — Next.js: Home (Client), `/room/[id]` (Server + Client), `/api/rooms` (POST).
+- `src/components/` — UI: `CreateRoomForm`, `NicknameDialog`, `ParticipantList`, `RoomErrorView`, `CardPicker`, `RoundControls`, `Results`.
 
-Vibe coding works best with guardrails. This template enforces a few non-negotiables (see `specs/constitution.md`):
+## Constituição & SDD
 
-1. **Spec before code** — describe observable behavior before generating implementation
-2. **Tests track behavior** — every behavioral change needs tests
-3. **Human approval before commit** — Human-In-Command (HIC) mode by default
-4. **Comments explain _why_, not _what_** — naming documents the what
-5. **Architectural decisions become ADRs** — immutable, traceable
-6. **Secrets never enter the repo** — even in example files
-7. **Atomic changes** — one concern per commit/PR
-8. **Fail loudly, not silently** — no swallowed errors
+Este projeto segue [specs/constitution.md](specs/constitution.md):
 
-You can relax any of these as your team matures — but only via an explicit ADR.
+- **Princípio 1** — Spec antes do código: [specs/planning-poker/spec.md](specs/planning-poker/spec.md) escrito e aprovado antes de qualquer linha.
+- **Princípio 2** — Tests trackeiam comportamento: cada AC tem ao menos um teste.
+- **Princípio 3** — HIC: cada commit teve aprovação humana antes de ser feito.
+- **Princípio 5** — ADRs para decisões arquiteturais: [0001-stack-choice](docs/adr/0001-stack-choice.md), [0002-logging-strategy](docs/adr/0002-logging-strategy.md).
+- **Princípio 7** — Mudanças atômicas: 13 commits, um por task de [specs/planning-poker/tasks.md](specs/planning-poker/tasks.md).
+- **Princípio 8** — Falha visível: erros nominais (`ErrorCode` em [events.ts](src/lib/events.ts)), logs Pino estruturados.
 
-## Suggested first steps after cloning
+## Licença
 
-1. Read `specs/constitution.md` together as a team and edit it to match your beliefs.
-2. Use `specs/example-feature/` as a reference for your first real spec.
-3. Try one full loop: `spec-writer` → review → `test-generator` → implement → `code-reviewer`.
-4. Document your first real architectural decision with the `adr-writer` skill.
-
-## Contributing
-
-This is a community template. PRs that improve the defaults, skills, or documentation are welcome. Please open an issue first to discuss substantial changes.
-
-## License
-
-[MIT](LICENSE) — free to use, modify, and distribute, including commercially.
+[MIT](LICENSE).

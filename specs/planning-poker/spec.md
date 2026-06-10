@@ -1,8 +1,8 @@
 # Spec: Planning Poker (real-time collaborative estimation)
 
-> **Status:** draft
+> **Status:** implemented
 > **Author:** José Menezes (com IADE agent)
-> **Date:** 2026-06-09
+> **Date:** 2026-06-09 (escrito) → 2026-06-10 (implementação completa)
 
 ## Context
 
@@ -63,18 +63,18 @@ Tudo é efêmero: a sala existe enquanto houver pelo menos uma pessoa conectada;
 
 ## Acceptance criteria
 
-- [ ] **AC1** — uma pessoa consegue criar uma sala a partir da tela inicial e recebe uma URL única.
-- [ ] **AC2** — abrir a URL da sala num segundo navegador permite entrar como participante após digitar apelido.
-- [ ] **AC3** — quando um participante vota, os demais veem "X já votou" sem ver o valor.
-- [ ] **AC4** — quando o facilitador revela, todos os clientes da sala recebem e exibem os votos simultaneamente (delay < 1s em rede local).
-- [ ] **AC5** — após revelar, a UI exibe média, mínimo e máximo das cartas numéricas.
-- [ ] **AC6** — facilitador pode iniciar nova rodada, descartando o estado anterior; todos os clientes refletem o reset.
-- [ ] **AC7** — o facilitador pode escolher a escala (Fibonacci, Fibonacci modificada, T-shirt) ao criar a sala e pode trocá-la entre rodadas (não durante uma rodada).
-- [ ] **AC8** — apelidos vazios ou duplicados são rejeitados com mensagem clara.
-- [ ] **AC9** — sala sem nenhuma conexão por mais de 10 minutos é descartada do servidor.
-- [ ] **AC10** — se o facilitador desconecta por > 30s, o papel é transferido para o participante mais antigo da sala.
-- [ ] **AC11** — abrir URL de sala inexistente exibe mensagem e oferece criar nova sala.
-- [ ] **AC12** — entrada/saída de participantes atualiza a lista da sala em todos os clientes em tempo real.
+- [x] **AC1** — uma pessoa consegue criar uma sala a partir da tela inicial e recebe uma URL única.
+- [x] **AC2** — abrir a URL da sala num segundo navegador permite entrar como participante após digitar apelido.
+- [x] **AC3** — quando um participante vota, os demais veem "X já votou" sem ver o valor.
+- [x] **AC4** — quando o facilitador revela, todos os clientes da sala recebem e exibem os votos simultaneamente (delay < 1s em rede local).
+- [x] **AC5** — após revelar, a UI exibe média, mínimo e máximo das cartas numéricas.
+- [x] **AC6** — facilitador pode iniciar nova rodada, descartando o estado anterior; todos os clientes refletem o reset.
+- [x] **AC7** — o facilitador pode escolher a escala (Fibonacci, Fibonacci modificada, T-shirt) ao criar a sala e pode trocá-la entre rodadas (não durante uma rodada).
+- [x] **AC8** — apelidos vazios ou duplicados são rejeitados com mensagem clara.
+- [x] **AC9** — sala sem nenhuma conexão por mais de 10 minutos é descartada do servidor.
+- [x] **AC10** — se o facilitador desconecta por > 30s, o papel é transferido para o participante mais antigo da sala.
+- [x] **AC11** — abrir URL de sala inexistente exibe mensagem e oferece criar nova sala.
+- [x] **AC12** — entrada/saída de participantes atualiza a lista da sala em todos os clientes em tempo real.
 
 ## Out of scope
 
