@@ -1,4 +1,5 @@
 import type { Participant, RoundResult } from "@/lib/events";
+import styles from "./Results.module.css";
 
 export interface ResultsProps {
   result: RoundResult;
@@ -12,51 +13,74 @@ function fmt(value: number | null): string {
 
 export function Results({ result, participants }: ResultsProps) {
   const distribution = Object.entries(result.counts).sort(([, a], [, b]) => b - a);
+  const maxCount = distribution.length > 0 ? Math.max(...distribution.map(([, c]) => c)) : 0;
 
   return (
-    <section aria-labelledby="results-heading">
-      <h2 id="results-heading">Resultado</h2>
+    <section aria-labelledby="results-heading" className={styles.panel}>
+      <h2 id="results-heading" className={styles.heading}>
+        Resultado
+      </h2>
 
-      <dl aria-label="Estatísticas">
-        <div>
-          <dt>Média</dt>
-          <dd data-stat="average">{fmt(result.average)}</dd>
+      <dl aria-label="Estatísticas" className={styles.stats}>
+        <div className={styles.stat}>
+          <dt className={styles.statLabel}>Média</dt>
+          <dd className={styles.statValue} data-stat="average">
+            {fmt(result.average)}
+          </dd>
         </div>
-        <div>
-          <dt>Mínimo</dt>
-          <dd data-stat="min">{fmt(result.min)}</dd>
+        <div className={styles.stat}>
+          <dt className={styles.statLabel}>Mínimo</dt>
+          <dd className={styles.statValue} data-stat="min">
+            {fmt(result.min)}
+          </dd>
         </div>
-        <div>
-          <dt>Máximo</dt>
-          <dd data-stat="max">{fmt(result.max)}</dd>
+        <div className={styles.stat}>
+          <dt className={styles.statLabel}>Máximo</dt>
+          <dd className={styles.statValue} data-stat="max">
+            {fmt(result.max)}
+          </dd>
         </div>
       </dl>
 
-      <h3>Votos</h3>
-      <ul aria-label="Votos por participante">
-        {participants.map((p) => {
-          const vote = result.votesBySession[p.sessionId];
-          return (
-            <li key={p.sessionId} data-session-id={p.sessionId}>
-              <span>{p.nickname}</span>
-              {": "}
-              <strong>{vote ?? "—"}</strong>
-            </li>
-          );
-        })}
-      </ul>
+      <div className={styles.section}>
+        <h3 className={styles.subheading}>Votos</h3>
+        <ul aria-label="Votos por participante" className={styles.votes}>
+          {participants.map((p) => {
+            const vote = result.votesBySession[p.sessionId];
+            return (
+              <li key={p.sessionId} data-session-id={p.sessionId} className={styles.voteRow}>
+                <span className={styles.voteName}>{p.nickname}</span>
+                <span aria-hidden="true" className={styles.srOnly}>
+                  {": "}
+                </span>
+                <span className={styles.voteValue}>{vote ?? "—"}</span>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
 
       {distribution.length > 0 ? (
-        <>
-          <h3>Distribuição</h3>
-          <ul aria-label="Distribuição de votos">
-            {distribution.map(([card, count]) => (
-              <li key={card}>
-                {card}: {count}
-              </li>
-            ))}
+        <div className={styles.section}>
+          <h3 className={styles.subheading}>Distribuição</h3>
+          <ul aria-label="Distribuição de votos" className={styles.distribution}>
+            {distribution.map(([card, count]) => {
+              const pct = maxCount > 0 ? (count / maxCount) * 100 : 0;
+              return (
+                <li key={card} className={styles.distRow}>
+                  <span className={styles.distCard}>{card}</span>
+                  <span aria-hidden="true" className={styles.srOnly}>
+                    {": "}
+                  </span>
+                  <span className={styles.distBar}>
+                    <span className={styles.distFill} style={{ width: `${pct}%` }} />
+                  </span>
+                  <span className={styles.distCount}>{count}</span>
+                </li>
+              );
+            })}
           </ul>
-        </>
+        </div>
       ) : null}
     </section>
   );
