@@ -2,9 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { io, type Socket } from "socket.io-client";
+import { CardPicker } from "@/components/CardPicker";
 import { NicknameDialog } from "@/components/NicknameDialog";
 import { ParticipantList } from "@/components/ParticipantList";
+import { Results } from "@/components/Results";
 import { RoomErrorView } from "@/components/RoomErrorView";
+import { RoundControls } from "@/components/RoundControls";
 import type {
   ClientToServerEvents,
   ErrorPayload,
@@ -12,6 +15,7 @@ import type {
   Result,
   ServerToClientEvents,
 } from "@/lib/events";
+import type { ScaleId } from "@/lib/scales";
 
 type RoomSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
@@ -52,11 +56,16 @@ function newSessionId(): string {
 export function RoomClient({ roomId, initialSessionId, initialNickname }: RoomClientProps) {
   const [state, setState] = useState<PublicRoomState | null>(null);
   const [joinError, setJoinError] = useState<ErrorPayload | null>(null);
+  const [actionError, setActionError] = useState<ErrorPayload | null>(null);
   const [terminalError, setTerminalError] = useState<ErrorPayload | null>(null);
   const [isJoining, setIsJoining] = useState(false);
+  const [isDispatching, setIsDispatching] = useState(false);
+  const [selectedCard, setSelectedCard] = useState<string | null>(null);
+
   const socketRef = useRef<RoomSocket | null>(null);
   const sessionIdRef = useRef<string | null>(initialSessionId);
   const nicknameRef = useRef<string | null>(initialNickname);
+  const lastRoundStartedAtRef = useRef<number | null>(null);
 
   const join = useCallback(
     (sessionId: string, nickname: string): void => {
@@ -86,6 +95,22 @@ export function RoomClient({ roomId, initialSessionId, initialNickname }: RoomCl
     [roomId, initialSessionId],
   );
 
+  const dispatch = useCallback(
+    <P extends Record<string, unknown>>(event: keyof ClientToServerEvents, payload: P): void => {
+      const socket = socketRef.current;
+      if (!socket) return;
+      setIsDispatching(true);
+      setActionError(null);
+      (
+        socket.emit as unknown as (e: string, p: unknown, ack: (r: Result<unknown>) => void) => void
+      )(event as string, payload, (res: Result<unknown>) => {
+        setIsDispatching(false);
+        if (!res.ok) setActionError(res.error);
+      });
+    },
+    [],
+  );
+
   useEffect(() => {
     const socket: RoomSocket = io({
       transports: ["websocket", "polling"],
@@ -94,7 +119,16 @@ export function RoomClient({ roomId, initialSessionId, initialNickname }: RoomCl
     socketRef.current = socket;
 
     socket.on("room:state", (next) => {
-      setState(next);
+      setState((prev) => {
+        const prevStarted = prev?.round?.startedAt ?? null;
+        const nextStarted = next.round?.startedAt ?? null;
+        if (prevStarted !== nextStarted) {
+          setSelectedCard(null);
+          lastRoundStartedAtRef.current = nextStarted;
+        }
+        if (next.round === null) setSelectedCard(null);
+        return next;
+      });
     });
     socket.on("room:closed", (payload) => {
       setTerminalError({
@@ -151,7 +185,33 @@ export function RoomClient({ roomId, initialSessionId, initialNickname }: RoomCl
     );
   }
 
+  const sessionId = sessionIdRef.current as string;
+  const me = state.participants.find((p) => p.sessionId === sessionId);
+  const isHost = me?.isHost === true;
   const hasActiveRound = state.round !== null && !state.round.revealed;
+  const canVote = hasActiveRound;
+
+  function vote(card: string): void {
+    setSelectedCard(card);
+    dispatch("round:vote", { roomId, sessionId, card });
+  }
+
+  function startRound(title?: string): void {
+    dispatch("round:start", { roomId, sessionId, title });
+  }
+
+  function reveal(): void {
+    dispatch("round:reveal", { roomId, sessionId });
+  }
+
+  function resetRound(): void {
+    setSelectedCard(null);
+    dispatch("round:reset", { roomId, sessionId });
+  }
+
+  function changeScale(scaleId: ScaleId): void {
+    dispatch("room:changeScale", { roomId, sessionId, scaleId });
+  }
 
   return (
     <main>
@@ -162,6 +222,7 @@ export function RoomClient({ roomId, initialSessionId, initialNickname }: RoomCl
           {" · "}
           {state.participants.length} participante
           {state.participants.length === 1 ? "" : "s"}
+          {isHost ? " · você é o facilitador" : ""}
         </p>
       </header>
 
@@ -170,19 +231,41 @@ export function RoomClient({ roomId, initialSessionId, initialNickname }: RoomCl
         <ParticipantList participants={state.participants} hasActiveRound={hasActiveRound} />
       </section>
 
-      <section aria-labelledby="round-placeholder-heading">
-        <h2 id="round-placeholder-heading">Rodada</h2>
-        {state.round === null ? (
-          <p>Nenhuma rodada em andamento.</p>
-        ) : state.round.revealed ? (
-          <p>Rodada revelada — resultado em breve nesta tela.</p>
-        ) : (
-          <p>Rodada em andamento. Aguardando votos.</p>
-        )}
-        <p>
-          <em>Card picker e controles do facilitador chegam no próximo task.</em>
+      {state.round?.revealed && state.round.result ? (
+        <Results result={state.round.result} participants={state.participants} />
+      ) : (
+        <section aria-labelledby="vote-heading">
+          <h2 id="vote-heading">
+            {hasActiveRound
+              ? `Votando${state.round?.title ? ` em ${state.round.title}` : ""}`
+              : "Aguardando início da rodada"}
+          </h2>
+          <CardPicker
+            scaleId={state.scaleId}
+            selectedCard={selectedCard}
+            onSelect={vote}
+            disabled={!canVote || isDispatching}
+          />
+        </section>
+      )}
+
+      {isHost ? (
+        <RoundControls
+          scaleId={state.scaleId}
+          round={state.round}
+          onStartRound={startRound}
+          onReveal={reveal}
+          onResetRound={resetRound}
+          onChangeScale={changeScale}
+          isSubmitting={isDispatching}
+        />
+      ) : null}
+
+      {actionError ? (
+        <p role="alert" data-action-error>
+          {actionError.message}
         </p>
-      </section>
+      ) : null}
     </main>
   );
 }
